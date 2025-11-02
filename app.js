@@ -550,12 +550,31 @@ function endAutoScrollLock(){
     }
     
     // ツール切り替え
-    // [修正C] 自動ロックロジックを削除し、シンプルなトグルに戻す
+    // [修正C] 「2案」の自動ロックを実装
     function setTool(toolName) {
-        if (state.currentTool === toolName) {
+        const oldTool = state.currentTool;
+
+        if (oldTool === toolName) {
+            // ツールをOFFにする
             state.currentTool = null;
+            // [修正C] セリフモードをOFFにする時、ロックも解除
+            if (oldTool === 'serif') {
+                endAutoScrollLock();
+            }
         } else {
+            // ツールをONにする（または切り替える）
+            
+            // [修正C] 古いツールがセリフモードなら、まずロック解除
+            if (oldTool === 'serif') {
+                endAutoScrollLock();
+            }
+
             state.currentTool = toolName;
+
+            // [修正C] 新しいツールがセリフモードなら、ロック
+            if (state.currentTool === 'serif') {
+                beginAutoScrollLock();
+            }
         }
         
         clearSelection();
@@ -629,7 +648,7 @@ function endAutoScrollLock(){
         return parseInt(e.target.dataset.pageIndex, 10);
     }
 
-    // [修正B/C] onPointerDown の 'serif' モードのロジックを変更
+    // [修正] onPointerDown (setPointerCapture と begin/endAutoScrollLock を削除)
     function onPointerDown(e) {
         // [v15] setPointerCapture は使わない
         
@@ -654,8 +673,7 @@ function endAutoScrollLock(){
                 // [修正B-1] タップで即編集せず、ドラッグ移動の準備
                 state.selectedBubbleId = clickedBubble.id;
                 isDraggingBubble = true;
-                // [修正C] セリフモードでドラッグ開始時に自動ロック
-                beginAutoScrollLock(); 
+                // [修正C] ロックは setTool が行うため、ここでは何もしない
                 if (state.isScrollLocked) e.preventDefault();
                 dragBubbleOffsetX = clickedBubble.x - x;
                 dragBubbleOffsetY = clickedBubble.y - y;
@@ -677,7 +695,7 @@ function endAutoScrollLock(){
             if (clickedBubble) {
                 state.selectedBubbleId = clickedBubble.id;
                 isDraggingBubble = true;
-                beginAutoScrollLock(); // nullツール時は自動ロック
+                beginAutoScrollLock(); // [修正C] nullツール時は手動でロック
                 if (state.isScrollLocked) e.preventDefault();
                 dragBubbleOffsetX = clickedBubble.x - x;
                 dragBubbleOffsetY = clickedBubble.y - y;
@@ -690,7 +708,7 @@ function endAutoScrollLock(){
 
 function onPointerMove(e) {
   // セリフ（バブル）移動中は常にスクロール抑止
-  // [修正B/C] セリフモードでもドラッグ中はスクロール抑止
+  // [修正B] セリフモードでもドラッグ中はスクロール抑止
   if (isDraggingBubble || (state.isScrollLocked && isDragging)) {
     e.preventDefault();
   } else if (!isDragging && !isDraggingBubble) {
@@ -749,8 +767,8 @@ function onPointerMove(e) {
                 }
             }
 
-            // [修正C] 'serif' または 'null' モードのドラッグが終了したのでロック解除
-            if (state.currentTool === 'serif' || state.currentTool === null) {
+            // [修正C] 'null' モードのドラッグが終了したのでロック解除
+            if (state.currentTool === null) {
                 endAutoScrollLock();
             }
         }
@@ -766,13 +784,13 @@ function onPointerMove(e) {
         if (state.isScrollLocked && (isDragging || isDraggingBubble)) {
             e.preventDefault();
         }
-        isDragging = false;
-        isDraggingBubble = false;
-        
-        // [修正C] 'serif' または 'null' モードのドラッグがキャンセルされたのでロック解除
-        if (state.currentTool === 'serif' || state.currentTool === null) {
+
+        // [修正C] 'null' モードのドラッグがキャンセルされたのでロック解除
+        if (state.currentTool === null) {
             endAutoScrollLock();
         }
+        isDragging = false;
+        isDraggingBubble = false;
         activePointerId = null;
         
         if (bubbleEditor.style.display !== 'block') {
@@ -913,7 +931,7 @@ function onPointerMove(e) {
         return bubble;
     }
 
-    // [修正B-2] フキダシの当たり判定を拡大
+    // [修正B-2] フキダシの当たり判定を拡大 (維持)
     function findBubbleAt(page, panel, x, y) {
         if (!page) return null;
         // [修正B-2] スマホの指操作を考慮し、10pxの余白（パディング）を追加
@@ -938,7 +956,7 @@ function onPointerMove(e) {
         bubbleEditor.value = bubble.text;
         bubbleEditor.style.display = 'block';
         
-        // [修正A] ズーム対策のため、入力欄のフォントは16px固定
+        // [修正A] ズーム対策のため、入力欄のフォントは16px固定 (維持)
         bubbleEditor.style.fontSize = '16px';
         bubbleEditor.style.lineHeight = `${BUBBLE_LINE_HEIGHT}`;
         
@@ -1186,7 +1204,7 @@ function onBubbleEditorInput(e) {
                 sortBubblesInPanel(arr);
                 arr.forEach((bubble) => {
                     output += bubble.text;
-                    output += "\n\B\n"; // \n\n
+                    output += "\n\n";
                 });
             });
 
