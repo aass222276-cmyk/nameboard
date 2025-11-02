@@ -123,7 +123,6 @@ body, html {
 }
 
 /* [v15修正] 新しいリセットボタンのスタイル */
-/* [修正] ツールバーから削除されたため、#toolbar指定を外す (問題1) */
 #btnReset, #btnResetPage, #btnResetPanels, #btnResetBubbles {
     background: #a00;
 }
@@ -221,19 +220,19 @@ body, html {
 /* --- 選択パネル --- */
 .selection-panel {
     position: fixed; 
-    bottom: 20px; /* [修正] フキダシ選択パネルの基準位置 (問題1) */
+    /* [修正] bottom: 20px; を削除 (個別に指定するため) */
     left: 50%;
     transform: translateX(-50%);
     background: rgba(50, 50, 50, 0.9);
     border: 1px solid #888;
     border-radius: 6px;
     padding: 5px;
-    display: none; /* [修正] デフォルト非表示 (問題1) */
+    display: none;
     gap: 5px;
     z-index: 20;
 }
 .selection-panel.show {
-    display: flex; /* [修正] JSで .show をつけて表示 (問題1) */
+    display: flex;
 }
 .selection-panel button {
     background: #666;
@@ -262,13 +261,33 @@ body, html {
     background: #e00;
 }
 
-/* [新規] ツールリセットパネルの位置 (問題1) */
-#toolResetPanel {
-    bottom: 95px; /* (フキダシパネル 20px + 高さ約 70px + 余白 5px) */
+/* [修正] フキダシ選択パネルの位置を「上」に変更 */
+#selectionPanelBubble {
+    bottom: 95px; /* (リセットパネル 20px + 高さ約 70px + 余白 5px) */
 }
-/* [新規] ツールリセットパネル内のボタン表示制御 (問題1) */
+
+/* [修正] ツールリセットパネルの位置を「下」に変更 */
+#toolResetPanel {
+    bottom: 20px;
+}
+
+/* [修正] ツールリセットパネル内のボタン表示制御 + 横書きスタイル */
 #toolResetPanel button {
     display: none; /* JSで .show をつけるまで非表示 */
+    
+    /* [新規] 横書き・3行・中央揃えスタイル */
+    writing-mode: horizontal-tb; /* 横書き */
+    text-orientation: mixed;
+    height: 60px; /* 高さは維持 */
+    width: auto;
+    min-width: 65px; /* 最小幅を確保 */
+    padding: 4px 8px; /* パディング調整 */
+    line-height: 1.2; /* 行間調整 */
+    font-size: 0.75rem; /* フォントサイズ縮小 */
+    font-weight: bold;
+    text-align: center; /* 中央揃え */
+    box-sizing: border-box;
+    white-space: normal; /* <br> を許可 */
 }
 #toolResetPanel button.show {
     display: block; /* .show がついたら表示 */

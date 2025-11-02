@@ -801,7 +801,8 @@ function onPointerMove(e) {
         saveState();
     }
 
-   function deletePage() {
+    // [修正] 'D' を削除
+    function deletePage() {
         if (state.pages.length <= 1) {
             // [v15] 最後の1ページは「全リセット」と同じ
             resetCurrentPagePanels();
