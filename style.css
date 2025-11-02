@@ -223,11 +223,10 @@ body, html {
     position: fixed;
     bottom: 20px;
     left: 20px; /* 左端の余白 */
-    /* [修正] right: 20px; を削除（ページ数との重複解消） */
     z-index: 20;
     display: flex;
     flex-wrap: nowrap;
-    /* [修正] gap: 5px; を削除 */
+    /* [修正] gapは使わず、marginで個別に指定 */
     align-items: flex-end; /* ボタンの高さを下揃え */
     pointer-events: none; /* ラッパー自体はタップを透過 */
 }
@@ -331,17 +330,16 @@ body, html {
   writing-mode: vertical-rl;
   text-orientation: upright;
   white-space: normal;
-  width: auto;      /* [修正] 幅は自動 */
-  height: 60px;     /* [修正] 高さを60pxに */
-  min-width: 30px;  /* [修正] 最小幅 */
-  padding: 10px 6px; /* [修正] 縦書き用パディング */
-  display: flex;    /* [修正] 中央揃えのため */
-  align-items: center;
-  justify-content: center;
+  text-align: center;     /* [新規] テキスト中央揃え */
+  width: 36px;            /* [修正] 幅を固定 (縦長にする) */
+  height: 60px;           /* 高さを60pxに */
+  min-width: auto;        /* [修正] min-widthをリセット */
+  padding: 6px 4px;       /* [修正] パディングを再調整 */
+  /* [修正] display:flex と関連プロパティを削除 */
   line-height: 1.2;
-  font-size: 0.8rem; /* [修正] 少し小さく */
+  font-size: 0.8rem;      /* 少し小さく */
   font-weight: bold;
-  border-radius: 4px; /* 四角 */
+  border-radius: 4px;     /* 四角 */
   box-sizing: border-box;
 }
 #scrollLockBtn.active {
