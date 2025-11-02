@@ -394,7 +394,7 @@ function endAutoScrollLock(){
         
         const { dir, pos } = getKomaSnapDirection(x1, y1, x2, y2);
         
-        // [v1M5] ドラッグ中の「現在」のコマを特定
+        // [v15] ドラッグ中の「現在」のコマを特定
         const panel = findPanelAt(page, x1, y1);
         if (!panel) return;
 
@@ -550,31 +550,12 @@ function endAutoScrollLock(){
     }
     
     // ツール切り替え
-    // [修正C] セリフモード時にスクロールロックを自動トグルする
+    // [修正C] 自動ロックロジックを削除し、シンプルなトグルに戻す
     function setTool(toolName) {
-        const oldTool = state.currentTool;
-
-        if (oldTool === toolName) {
-            // ツールをOFFにする
+        if (state.currentTool === toolName) {
             state.currentTool = null;
-            // [修正C] セリフモードをOFFにする時、ロックも解除
-            if (oldTool === 'serif' && state.isScrollLocked) {
-                toggleScrollLock();
-            }
         } else {
-            // ツールをONにする（または切り替える）
-            
-            // [修正C] 古いツールがセリフモードなら、まずロック解除
-            if (oldTool === 'serif' && state.isScrollLocked) {
-                toggleScrollLock();
-            }
-
             state.currentTool = toolName;
-
-            // [修正C] 新しいツールがセリフモードなら、ロック
-            if (state.currentTool === 'serif' && !state.isScrollLocked) {
-                toggleScrollLock();
-            }
         }
         
         clearSelection();
@@ -648,7 +629,7 @@ function endAutoScrollLock(){
         return parseInt(e.target.dataset.pageIndex, 10);
     }
 
-    // [修正B] onPointerDown の 'serif' モードのロジックを変更
+    // [修正B/C] onPointerDown の 'serif' モードのロジックを変更
     function onPointerDown(e) {
         // [v15] setPointerCapture は使わない
         
@@ -667,18 +648,20 @@ function endAutoScrollLock(){
         if (!panel) return; 
 
         if (state.currentTool === 'serif') {
+            // [修正B-2] 当たり判定を拡大した findBubbleAt を呼ぶ
             const clickedBubble = findBubbleAt(page, panel, x, y);
             if (clickedBubble) {
-                // [修正B] タップで即編集せず、ドラッグ移動の準備
+                // [修正B-1] タップで即編集せず、ドラッグ移動の準備
                 state.selectedBubbleId = clickedBubble.id;
                 isDraggingBubble = true;
-                // beginAutoScrollLock(); // 自動ロックはセリフモードで不要（Cで対応）
+                // [修正C] セリフモードでドラッグ開始時に自動ロック
+                beginAutoScrollLock(); 
                 if (state.isScrollLocked) e.preventDefault();
                 dragBubbleOffsetX = clickedBubble.x - x;
                 dragBubbleOffsetY = clickedBubble.y - y;
 
             } else {
-                // [修正B] 何もない場所は、従来通り即時作成＆編集
+                // [修正B-1] 何もない場所は、従来通り即時作成＆編集
                 const newBubble = createBubble(panel, x, y);
                 state.selectedBubbleId = newBubble.id;
                 showBubbleEditor(newBubble);
@@ -707,7 +690,7 @@ function endAutoScrollLock(){
 
 function onPointerMove(e) {
   // セリフ（バブル）移動中は常にスクロール抑止
-  // [修正B] セリフモードでもドラッグ中はスクロール抑止
+  // [修正B/C] セリフモードでもドラッグ中はスクロール抑止
   if (isDraggingBubble || (state.isScrollLocked && isDragging)) {
     e.preventDefault();
   } else if (!isDragging && !isDraggingBubble) {
@@ -722,7 +705,7 @@ function onPointerMove(e) {
     dragCurrentX = x;
     dragCurrentY = y;
     renderActivePage();
-  } else if (isDraggingBubble) { // [修正B] 'serif' または 'null' ツールで移動
+  } else if (isDraggingBubble) { // [修正B-1] 'serif' または 'null' ツールで移動
     const bubble = getSelectedBubble();
     if (bubble) {
       bubble.x = x + dragBubbleOffsetX;
@@ -735,9 +718,9 @@ function onPointerMove(e) {
   }
 }
 
-    // [修正B] onPointerUp のロジックを変更
+    // [修正B/C] onPointerUp のロジックを変更
     function onPointerUp(e) {
-        // [修正B] セリフモードでもドラッグ中は preventDefault
+        // [修正B/C] セリフモードでもドラッグ中は preventDefault
         if (isDraggingBubble || (state.isScrollLocked && isDragging)) {
             e.preventDefault();
         }
@@ -750,24 +733,24 @@ function onPointerMove(e) {
 
         } else if (isDraggingBubble) {
             
-            // [修正B] タップかドラッグかを判定
+            // [修正B-1] タップかドラッグかを判定
             const dx = x - dragStartX;
             const dy = y - dragStartY;
             const dist = Math.hypot(dx, dy);
 
             if (dist < KOMA_TAP_THRESHOLD && state.currentTool === 'serif') {
-                // [修正B] セリフモードで「タップ」されたと判断 -> 編集開始
+                // [修正B-1] セリフモードで「タップ」されたと判断 -> 編集開始
                 const bubble = getSelectedBubble();
                 if (bubble) showBubbleEditor(bubble);
             } else {
-                // [修正B] ドラッグ終了、または null モードでのタップ
+                // [修正B-1] ドラッグ終了、または null モードでのタップ
                 if (bubbleEditor.style.display !== 'block') {
                      saveAndRenderActivePage();
                 }
             }
 
-            // [修正B] null モードの時だけ自動ロックを解除
-            if (state.currentTool === null) {
+            // [修正C] 'serif' または 'null' モードのドラッグが終了したのでロック解除
+            if (state.currentTool === 'serif' || state.currentTool === null) {
                 endAutoScrollLock();
             }
         }
@@ -778,14 +761,16 @@ function onPointerMove(e) {
         activePointerId = null;
     }
     
+    // [修正C] onPointerCancel のロジックを変更
     function onPointerCancel(e) {
         if (state.isScrollLocked && (isDragging || isDraggingBubble)) {
             e.preventDefault();
         }
         isDragging = false;
         isDraggingBubble = false;
-        // [修正B] null モードの時だけ自動ロックを解除
-        if (state.currentTool === null) {
+        
+        // [修正C] 'serif' または 'null' モードのドラッグがキャンセルされたのでロック解除
+        if (state.currentTool === 'serif' || state.currentTool === null) {
             endAutoScrollLock();
         }
         activePointerId = null;
@@ -928,12 +913,19 @@ function onPointerMove(e) {
         return bubble;
     }
 
+    // [修正B-2] フキダシの当たり判定を拡大
     function findBubbleAt(page, panel, x, y) {
         if (!page) return null;
+        // [修正B-2] スマホの指操作を考慮し、10pxの余白（パディング）を追加
+        const hitboxPadding = 10; 
         // [v15] page直下のbubblesを検索
         for (let i = page.bubbles.length - 1; i >= 0; i--) {
             const b = page.bubbles[i];
-            if (x >= b.x - b.w && x <= b.x && y >= b.y && y <= b.y + b.h) {
+            // [修正B-2] 判定ロジックに hitboxPadding を適用
+            if (x >= b.x - b.w - hitboxPadding && 
+                x <= b.x + hitboxPadding && 
+                y >= b.y - hitboxPadding && 
+                y <= b.y + b.h + hitboxPadding) {
                 return b;
             }
         }
@@ -1194,7 +1186,7 @@ function onBubbleEditorInput(e) {
                 sortBubblesInPanel(arr);
                 arr.forEach((bubble) => {
                     output += bubble.text;
-                    output += "\n\n";
+                    output += "\n\B\n"; // \n\n
                 });
             });
 
