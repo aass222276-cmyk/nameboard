@@ -326,18 +326,16 @@ body, html {
   border: 1px solid #888;
   color: white;
 
-  /* [修正] 縦書き・縦の四角スタイル */
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  white-space: normal;
-  text-align: center;     /* [新規] テキスト中央揃え */
-  width: 36px;            /* [修正] 幅を固定 (縦長にする) */
-  height: 60px;           /* 高さを60pxに */
-  min-width: auto;        /* [修正] min-widthをリセット */
-  padding: 6px 4px;       /* [修正] パディングを再調整 */
-  /* [修正] display:flex と関連プロパティを削除 */
-  line-height: 1.2;
-  font-size: 0.8rem;      /* 少し小さく */
+  /* [修正] <br>タグによる強制改行（縦積み）スタイル */
+  /* writing-mode を削除 */
+  white-space: normal;      /* <br> を有効にする */
+  text-align: center;         /* テキストを中央揃え */
+  width: 36px;                /* 幅を固定 (縦長にする) */
+  height: 60px;               /* 高さを60pxに */
+  min-width: auto;        
+  padding: 8px 4px;       /* [修正] 上下パディングを調整 */
+  line-height: 1.1;       /* [修正] 行間を詰めて3行入るようにする */
+  font-size: 0.8rem;      
   font-weight: bold;
   border-radius: 4px;     /* 四角 */
   box-sizing: border-box;
