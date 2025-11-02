@@ -1,0 +1,359 @@
+/* --- 基本設定 --- */
+:root {
+    --b5-ratio: 1.4142; /* B5縦 (√2) */
+    --toolbar-height: 75px; /* [v15] ツールバーの高さ 75px */
+    --page-gap: 20px; /* ページ間の余白 */
+    --gutter-h: 18px; /* 横ガター幅 */
+    --gutter-v: 9px;  /* 縦ガター幅 */
+    --padding-bubble-x: 10px; /* 縦書きの左右余白 */
+    --padding-bubble-y: 8px;  /* 上下の余白 */
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #333;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- ツールバー (v15 縦長・固定) --- */
+#toolbar {
+    /* [v15] 画面上部に固定 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    height: var(--toolbar-height);
+    background-color: #444;
+    padding: 0 10px;
+    gap: 5px; 
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #444;
+}
+#toolbar::-webkit-scrollbar { height: 6px; }
+#toolbar::-webkit-scrollbar-track { background: #444; }
+#toolbar::-webkit-scrollbar-thumb { background-color: #888; border-radius: 3px; }
+
+/* [v15] 縦長・縦書きボタン対応 */
+#toolbar button {
+    background: #666;
+    border: 1px solid #888;
+    color: white;
+    padding: 4px 2px; 
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    flex-shrink: 0;
+    white-space: normal; /* <br> を許可 */
+    line-height: 1.25;  
+    font-size: 0.8rem;  
+    height: calc(var(--toolbar-height) - 16px); 
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-width: 30px; 
+}
+#toolbar button:hover { background: #777; }
+#toolbar button.active { background: #007bff; border-color: #0056b3; }
+
+/* [v15] 4文字ボタン（ペースト） */
+#toolbar button.btn-4char {
+    font-size: 0.7rem; 
+    line-height: 1.1;  
+}
+
+#toolbar .separator {
+    width: 1px;
+    height: 48px; 
+    background-color: #555;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+#toolbar .separator-right {
+    width: 1px;
+    height: 48px;
+    background-color: #555;
+    margin-left: auto; /* 右に寄せる */
+    margin-right: 4px;
+}
+
+/* フォントスライダー（例外） */
+#sliderFontSize {
+    width: 60px; 
+    flex-shrink: 0;
+    height: auto; 
+}
+/* [v15] px表示部（div） */
+#fontSizeValueDisplay {
+    background: #666;
+    border: 1px solid #888;
+    color: white;
+    padding: 4px 2px;
+    border-radius: 4px;
+    font-weight: bold;
+    flex-shrink: 0;
+    white-space: normal;
+    line-height: 1.25;
+    font-size: 0.8rem;
+    height: calc(var(--toolbar-height) - 16px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-width: 28px;
+}
+
+/* [v15修正] 新しいリセットボタンのスタイル */
+/* [修正] ツールバーから削除されたため、#toolbar指定を外す (問題1) */
+#btnReset, #btnResetPage, #btnResetPanels, #btnResetBubbles {
+    background: #a00;
+}
+#btnReset:hover, #btnResetPage:hover, #btnResetPanels:hover, #btnResetBubbles:hover {
+    background: #c00;
+}
+
+
+/* --- [v15] キャンバス領域 --- */
+#canvasContainer {
+    flex-grow: 1;
+    overflow-y: auto; 
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; 
+    background-color: #2a2a2a;
+    /* [v15] ツールバーに隠れないよう、上部を押し下げる */
+    padding: calc(var(--toolbar-height) + var(--page-gap)) 10px var(--page-gap) 10px;
+    box-sizing: border-box;
+    position: relative; 
+}
+
+/* [v15新設] スクロール停止（手動トグル） */
+#canvasContainer.scroll-locked {
+    overflow-y: hidden;
+    touch-action: none;
+    overscroll-behavior: contain;
+}
+
+/* ページラッパー */
+.page-wrapper {
+    width: 100%;
+    margin-bottom: var(--page-gap); 
+    box-sizing: border-box;
+}
+
+/* アクティブページのハイライト */
+.page-wrapper.active .mainCanvas {
+    outline: 3px solid #007bff;
+    box-shadow: 0 0 15px rgba(0,123,255,0.7);
+}
+
+/* [v15] canvasのスタイル */
+.mainCanvas {
+    width: 100%; 
+    height: auto; 
+    display: block; 
+    background: white;
+    aspect-ratio: calc(1 / var(--b5-ratio)); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    cursor: default;
+    
+    /* [v15] ダブルタップズーム禁止、縦スクロールは許可 */
+    touch-action: manipulation;
+}
+.mainCanvas.tool-serif {
+    cursor: text;
+}
+.mainCanvas.tool-koma {
+    cursor: crosshair;
+    touch-action: none; 
+}
+
+/* --- フキダシ入力エリア --- */
+#bubbleEditor {
+    position: absolute;
+    display: none;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px dashed #007bff;
+    box-sizing: border-box;
+    overflow-y: auto;
+    resize: none;
+    outline: none;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    z-index: 10;
+    writing-mode: vertical-rl;
+    white-space: pre; 
+    padding: var(--padding-bubble-y) var(--padding-bubble-x);
+    line-height: 1.2; 
+    scrollbar-width: thin;
+    
+    /* [v15修正] transform で配置（left/top=0固定）。ズレ防止 */
+    left: 0;
+    top: 0;
+    transform: translate(0, 0);
+    will-change: transform;
+    touch-action: none; /* IME中のフリック誤作動も軽減 */
+    text-orientation: upright; /* 1字ずつ正立（カーソルの通り道が素直になる） */
+    letter-spacing: 0;         /* カーソルのズレ抑制。任意で微調整可 */
+    caret-color: #000;
+
+}
+#bubbleEditor::-webkit-scrollbar { height: 6px; }
+#bubbleEditor::-webkit-scrollbar-thumb { background-color: #888; }
+
+/* --- 選択パネル --- */
+.selection-panel {
+    position: fixed; 
+    bottom: 20px; /* [修正] フキダシ選択パネルの基準位置 (問題1) */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(50, 50, 50, 0.9);
+    border: 1px solid #888;
+    border-radius: 6px;
+    padding: 5px;
+    display: none; /* [修正] デフォルト非表示 (問題1) */
+    gap: 5px;
+    z-index: 20;
+}
+.selection-panel.show {
+    display: flex; /* [修正] JSで .show をつけて表示 (問題1) */
+}
+.selection-panel button {
+    background: #666;
+    border: 1px solid #888;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem; 
+}
+.selection-panel button:hover {
+    background: #777;
+}
+.selection-panel button.vertical-btn {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    padding: 10px 6px;
+    line-height: 1.2;
+    font-weight: bold;
+    height: 60px; 
+}
+.selection-panel button.delete {
+    background: #c00;
+}
+.selection-panel button.delete:hover {
+    background: #e00;
+}
+
+/* [新規] ツールリセットパネルの位置 (問題1) */
+#toolResetPanel {
+    bottom: 95px; /* (フキダシパネル 20px + 高さ約 70px + 余白 5px) */
+}
+/* [新規] ツールリセットパネル内のボタン表示制御 (問題1) */
+#toolResetPanel button {
+    display: none; /* JSで .show をつけるまで非表示 */
+}
+#toolResetPanel button.show {
+    display: block; /* .show がついたら表示 */
+}
+
+
+/* --- ページ番号表示 --- */
+#pageIndicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    z-index: 10;
+    pointer-events: none; /* タップを透過 */
+}
+
+/* [fix] 左下ロックボタンを横書き・1行表示に */
+#scrollLockBtn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 20;
+
+  background: #666;
+  border: 1px solid #888;
+  color: white;
+
+  /* ←ここを調整 */
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: nowrap;       /* 改行しない */
+  width: auto;               /* 固定幅やめる */
+  min-width: 70px;           /* お好みで縮めてOK */
+  height: 36px;              /* 縦長やめる */
+  padding: 6px 10px;         /* 余白調整 */
+  display: inline-flex;      /* 横並び維持 */
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+#scrollLockBtn.active {
+  background: #007bff;
+  border-color: #0056b3;
+}
+
+
+/* --- 非表示のテキストエリア --- */
+#textIO {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    opacity: 0;
+}
+
+/* [修正] 赤ボタンの定義を更新 (問題1) */
+#toolbar #btnPageDelete,
+#toolbar #btnReset,
+#toolResetPanel #btnResetPanels,
+#toolResetPanel #btnResetBubbles,
+#selectionPanelBubble #deleteBubble { /* フキダシ削除ボタンもついでに統一 */
+  background: #5c1f1f !important;   /* base */
+  color: #fff !important;
+  border: 1px solid #3a1414 !important;
+}
+#toolbar #btnPageDelete:hover,
+#toolbar #btnReset:hover,
+#toolResetPanel #btnResetPanels:hover,
+#toolResetPanel #btnResetBubbles:hover,
+#selectionPanelBubble #deleteBubble:hover {
+  background: #772222 !important;   /* hover */
+  border-color: #2c0f0f !important;
+}
+#toolbar #btnPageDelete:active,
+#toolbar #btnReset:active,
+#toolResetPanel #btnResetPanels:active,
+#toolResetPanel #btnResetBubbles:active,
+#selectionPanelBubble #deleteBubble:active {
+  background: #8b2a2a !important;   /* active */
+  border-color: #3a1414 !important;
+}

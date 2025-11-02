@@ -1,53 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>NameBoard PWA</title>
-  <meta name="theme-color" content="#111111">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <style>
-    :root{--page-w:840px;--page-h:1400px;--pad:8px;font-family:system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif}
-    body{margin:0;background:#f2f2f2;}
-    header{position:sticky;top:0;background:#fff;display:flex;gap:.5rem;align-items:center;padding:.5rem;border-bottom:1px solid #ddd;z-index:10;overflow:auto}
-    header button, header input{font-size:14px;padding:.5rem .7rem;border:1px solid #ccc;border-radius:8px;background:#fff}
-    #pages{padding:12px;display:flex;flex-direction:column;align-items:center;gap:16px}
-    .page{position:relative;background:#fff;width:var(--page-w);height:var(--page-h);box-shadow:0 2px 8px rgba(0,0,0,.12);overflow:hidden}
-    .textbox{position:absolute;min-width:40px;min-height:40px;background:rgba(255,255,255,.85);border:1px dashed #888;border-radius:4px;box-sizing:border-box;padding:var(--pad);touch-action:none;resize:both;overflow:auto}
-    .textbox[contenteditable="true"]{outline:none;caret-color:#000}
-    .selected{border:2px solid #007aff}
-    .vh{writing-mode:vertical-rl;text-orientation:upright;line-height:1.6}
-    .hh{writing-mode:horizontal-tb;line-height:1.6}
-    .handle{position:absolute;right:-10px;bottom:-10px;width:20px;height:20px;border-radius:50%;background:#007aff;color:#fff;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
-    @media (max-width: 920px){:root{--page-w: calc(100vw - 24px); --page-h: calc((100vw - 24px) * 1.6);}}
-    @media print{@page{size:A4;margin:10mm}header{display:none}body{background:#fff}.page{box-shadow:none;page-break-after:always;width:190mm;height:277mm}}
-    .spacer{flex:1}
-  </style>
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>❤たかしまネームエディタ❤</title>
+
+  <link rel="stylesheet" href="./style.css">
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#FFFFFF">
+
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png" sizes="180x180">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon-167.png" sizes="167x167">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon-152.png" sizes="152x152">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon-120.png" sizes="120x120">
+
+  <link rel="icon" type="image/png" href="./icons/favicon-32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="./icons/favicon-16.png" sizes="16x16">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+
 </head>
 <body>
-  <header>
-    <button id="addPage">＋ページ</button>
-    <button id="addVH">縦書き</button>
-    <button id="addHH">横書き</button>
-    <label>文字 <input id="font" type="range" min="10" max="64" value="20"></label>
-    <button id="toggle">縦⇄横</button>
-    <button id="dup">複製</button>
-    <button id="del">削除</button>
-    <span class="spacer"></span>
-    <button id="export">書き出し</button>
-    <label style="display:inline-block">
-      読込 <input id="import" type="file" accept="application/json" style="display:none">
-    </label>
-  </header>
-  <div id="pages"></div>
-  <script type="module" src="app.js"></script>
-  <script>
-    if('serviceWorker' in navigator){
-      window.addEventListener('load', ()=>{
-        navigator.serviceWorker.register('./sw.js');
-      });
-    }
-  </script>
+
+    <div id="toolbar">
+        
+        <button id="btnPageAddBefore" title="前にページ追加">↑<br>追<br>加</button>
+        <button id="btnPageAddAfter" title="後にページ追加">追<br>加<br>↓</button>
+        <button id="btnPageDelete" title="ページ削除">P<br>削<br>除</button>
+
+        <div class="separator"></div>
+
+        <button id="btnSerif" class="tool-toggle" title="セリフ (S)">セ<br>リ<br>フ</button>
+        <button id="btnKoma" class="tool-toggle" title="コマ枠 (K)">コ<br>マ<br>割</button>
+        
+        <div class="separator"></div>
+
+        <input type="range" id="sliderFontSize" min="10" max="48" value="16" title="文字サイズ">
+        <div id="fontSizeValueDisplay">16<br>px</div>
+
+        <div class="separator"></div>
+
+        <button id="btnCopyText" title="テキストコピー">コ<br>ピ<br>ー</button>
+        <button id="btnPasteText" title="テキストペースト" class="btn-4char">ペ<br>ー<br>ス<br>ト</button>
+        
+        <div class="separator"></div>
+        
+        <button id="btnPNG" title="PNG書き出し/共有">P<br>N<br>G</button>
+        <button id="btnZIP" title="ZIP書き出し">Z<br>I<br>P</button>
+        
+        <div class="separator-right"></div>
+        
+        <button id="btnReset" title="全リセット">全<br>削<br>除</button>
+    </div>
+
+    <div id="canvasContainer">
+        </div>
+
+    <textarea id="bubbleEditor"></textarea>
+
+    <div id="toolResetPanel" class="selection-panel">
+        <button id="btnResetPanels" class="delete vertical-btn" title="このページのコマ枠をリセット">コマ<br>リセ<br>ット</button>
+        <button id="btnResetBubbles" class="delete vertical-btn" title="このページのセリフをリセット">セリフ<br>リセ<br>ット</button>
+    </div>
+
+    <div id="selectionPanelBubble" class="selection-panel">
+        <button id="shapeEllipse" class="vertical-btn">楕円</button>
+        <button id="shapeRect" class="vertical-btn">四角</button>
+        <button id="deleteBubble" class="delete vertical-btn">削除</button>
+    </div>
+    
+    <div id="pageIndicator">1 / 1</div>
+
+    <button id="scrollLockBtn" title="スクロール固定 (L)">ロック</button>
+
+    <textarea id="textIO" aria-hidden="true"></textarea>
+
 </body>
 </html>
