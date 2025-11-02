@@ -7,6 +7,7 @@
     --gutter-v: 9px;  /* 縦ガター幅 */
     --padding-bubble-x: 10px; /* 縦書きの左右余白 */
     --padding-bubble-y: 8px;  /* 上下の余白 */
+    --padding-bubble-none: 2px; /* [新規] 枠なしの余白 */
 }
 
 body, html {
@@ -217,19 +218,34 @@ body, html {
 #bubbleEditor::-webkit-scrollbar { height: 6px; }
 #bubbleEditor::-webkit-scrollbar-thumb { background-color: #888; }
 
-/* --- 選択パネル --- */
+/* --- [修正] 画面下部UIのラッパー --- */
+#bottomBar {
+    position: fixed;
+    bottom: 20px;
+    left: 20px; /* 左端の余白 */
+    right: 20px; /* 右端の余白（ページ番号と衝突しないよう） */
+    z-index: 20;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: flex-end; /* ボタンの高さを下揃え */
+    pointer-events: none; /* ラッパー自体はタップを透過 */
+}
+#bottomBar > * {
+    pointer-events: auto; /* 子要素（ボタンやパネル）はタップ可能 */
+    flex-shrink: 0; /* 縮まない */
+}
+
+/* --- [修正] 選択パネルのスタイル（位置指定を削除） --- */
 .selection-panel {
-    position: fixed; 
-    /* [修正] bottom: 20px; を削除 (個別に指定するため) */
-    left: 50%;
-    transform: translateX(-50%);
+    /* [修正] position, bottom, left, transform を削除 */
     background: rgba(50, 50, 50, 0.9);
     border: 1px solid #888;
     border-radius: 6px;
     padding: 5px;
     display: none;
     gap: 5px;
-    z-index: 20;
+    /* [修正] z-indexはbottomBarが持つので不要 */
 }
 .selection-panel.show {
     display: flex;
@@ -261,36 +277,25 @@ body, html {
     background: #e00;
 }
 
-/* [修正] フキダシ選択パネルの位置を「上」に変更 */
-#selectionPanelBubble {
-    bottom: 95px; /* (リセットパネル 20px + 高さ約 70px + 余白 5px) */
-}
 
-/* [修正] ツールリセットパネルの位置を「下」に変更 */
-#toolResetPanel {
-    bottom: 20px;
-}
-
-/* [修正] ツールリセットパネル内のボタン表示制御 + 横書きスタイル */
+/* [修正] ツールリセットパネル内のボタンスタイル（位置指定削除） */
 #toolResetPanel button {
     display: none; /* JSで .show をつけるまで非表示 */
-    
-    /* [新規] 横書き・3行・中央揃えスタイル */
-    writing-mode: horizontal-tb; /* 横書き */
+    writing-mode: horizontal-tb;
     text-orientation: mixed;
-    height: 60px; /* 高さは維持 */
+    height: 60px;
     width: auto;
-    min-width: 65px; /* 最小幅を確保 */
-    padding: 4px 8px; /* パディング調整 */
-    line-height: 1.2; /* 行間調整 */
-    font-size: 0.75rem; /* フォントサイズ縮小 */
+    min-width: 65px;
+    padding: 4px 8px;
+    line-height: 1.2;
+    font-size: 0.75rem;
     font-weight: bold;
-    text-align: center; /* 中央揃え */
+    text-align: center;
     box-sizing: border-box;
-    white-space: normal; /* <br> を許可 */
+    white-space: normal;
 }
 #toolResetPanel button.show {
-    display: block; /* .show がついたら表示 */
+    display: block;
 }
 
 
@@ -309,31 +314,30 @@ body, html {
     pointer-events: none; /* タップを透過 */
 }
 
-/* [fix] 左下ロックボタンを横書き・1行表示に */
+/* [修正] ロックボタンのスタイル（円形・縦書き） */
 #scrollLockBtn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 20;
+  /* [修正] position, bottom, left, z-index を削除 (bottomBarが管理) */
+  order: -2; /* [新規] 一番左に配置 */
 
   background: #666;
   border: 1px solid #888;
   color: white;
 
-  /* ←ここを調整 */
-  writing-mode: horizontal-tb;
-  text-orientation: mixed;
-  white-space: nowrap;       /* 改行しない */
-  width: auto;               /* 固定幅やめる */
-  min-width: 70px;           /* お好みで縮めてOK */
-  height: 36px;              /* 縦長やめる */
-  padding: 6px 10px;         /* 余白調整 */
-  display: inline-flex;      /* 横並び維持 */
+  /* [新規] 円形・縦書きスタイル */
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  white-space: normal;
+  width: 54px; /* 円形にするため */
+  height: 54px; /* 円形にするため */
+  min-width: 54px;
+  padding: 6px;
+  display: flex; /* 中央揃えのため */
   align-items: center;
   justify-content: center;
   line-height: 1.2;
-  font-size: 0.9rem;
-  border-radius: 4px;
+  font-size: 0.8rem; /* 少し小さく */
+  font-weight: bold;
+  border-radius: 50%; /* 円形 */
   box-sizing: border-box;
 }
 #scrollLockBtn.active {

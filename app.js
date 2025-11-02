@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const GUTTER_V = 9;  
     const BUBBLE_PADDING_X = 10; 
     const BUBBLE_PADDING_Y = 8;  
+    const BUBBLE_PADDING_NONE = 2; // [新規] 枠なしの余白
     const BUBBLE_LINE_HEIGHT = 1.2; 
     const SNAP_ANGLE_THRESHOLD = 15; 
     const KOMA_TAP_THRESHOLD = 3; 
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectionPanelBubble = document.getElementById('selectionPanelBubble');
     const shapeEllipse = document.getElementById('shapeEllipse');
     const shapeRect = document.getElementById('shapeRect');
+    const shapeNone = document.getElementById('shapeNone'); // [新規]
     const deleteBubble = document.getElementById('deleteBubble');
     const bubbleEditor = document.getElementById('bubbleEditor');
     const textIO = document.getElementById('textIO');
@@ -430,7 +432,7 @@ function endAutoScrollLock(){
         });
     }
 
-    // [v15] フキダシ描画 (右上アンカー)
+    // [修正] drawSingleBubble に「枠無」処理を追加
     function drawSingleBubble(bubble, context) {
         const { x, y, w, h, shape, text, font } = bubble;
         context.save();
@@ -441,6 +443,7 @@ function endAutoScrollLock(){
         context.beginPath();
         switch (shape) {
             case 'rect':
+            case 'none': // [新規] 枠無は四角形として描画
                 context.rect(-w, 0, w, h);
                 break;
             case 'ellipse':
@@ -450,7 +453,9 @@ function endAutoScrollLock(){
         }
         context.closePath();
         context.fill();
-        context.stroke();
+        if (shape !== 'none') { // [新規] 枠無以外の場合のみ枠線を描画
+            context.stroke();
+        }
         context.fillStyle = 'black';
         context.font = `${font}px 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif`;
         context.textAlign = 'center'; 
@@ -458,8 +463,13 @@ function endAutoScrollLock(){
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
         const charHeight = font * BUBBLE_LINE_HEIGHT;  
-        let currentX = -BUBBLE_PADDING_X - (columnWidth / 2);
-        const startY = BUBBLE_PADDING_Y;
+        
+        // [新規] 枠無用の余白を適用
+        const paddingX = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_X;
+        const paddingY = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_Y;
+
+        let currentX = -paddingX - (columnWidth / 2);
+        const startY = paddingY;
         lines.forEach((line) => {
             let currentY = startY;
             for (let i = 0; i < line.length; i++) {
@@ -503,6 +513,7 @@ function endAutoScrollLock(){
         btnResetAllEl.addEventListener('click', resetAllData); 
         shapeEllipse.addEventListener('click', () => setBubbleShape('ellipse'));
         shapeRect.addEventListener('click', () => setBubbleShape('rect'));
+        shapeNone.addEventListener('click', () => setBubbleShape('none')); // [新規]
         deleteBubble.addEventListener('click', deleteSelectedBubble);
         bubbleEditor.addEventListener('input', onBubbleEditorInput);
         bubbleEditor.addEventListener('blur', hideBubbleEditor);
@@ -648,7 +659,7 @@ function endAutoScrollLock(){
         return parseInt(e.target.dataset.pageIndex, 10);
     }
 
-    // [修正] onPointerDown (setPointerCapture と begin/endAutoScrollLock を削除)
+    // [修正] onPointerDown (ロック関連を削除)
     function onPointerDown(e) {
         // [v15] setPointerCapture は使わない
         
@@ -1020,12 +1031,17 @@ function onBubbleEditorInput(e) {
     
     function onBubbleEditorKeyDown(e) { /* Escはグローバルで処理 */ }
 
-    // 縦書き用のサイズ測定
+    // [修正] 縦書き用のサイズ測定に「枠無」処理を追加
     function measureBubbleSize(bubble) {
-        const { text, font } = bubble;
+        const { text, font, shape } = bubble; // [新規] shape を取得
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
         const charHeight = font * BUBBLE_LINE_HEIGHT * 0.9; 
+        
+        // [新規] 枠無用の余白を適用
+        const paddingX = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_X;
+        const paddingY = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_Y;
+
         let maxHeight = 0;
         lines.forEach(line => {
             const height = line.length * charHeight;
@@ -1035,8 +1051,8 @@ function onBubbleEditorInput(e) {
              maxHeight = font;
         }
         const totalWidth = lines.length * columnWidth;
-        bubble.w = totalWidth + BUBBLE_PADDING_X * 2;
-        bubble.h = maxHeight + BUBBLE_PADDING_Y * 2;
+        bubble.w = totalWidth + paddingX * 2;
+        bubble.h = maxHeight + paddingY * 2;
     }
 
     function getSelectedBubble(page = getCurrentPage()) {
@@ -1058,6 +1074,7 @@ function onBubbleEditorInput(e) {
         const bubble = getSelectedBubble();
         if (bubble) {
             bubble.shape = shape;
+            measureBubbleSize(bubble); // [新規] 枠無はサイズが変わるため再計算
             saveAndRenderActivePage();
         }
     }
