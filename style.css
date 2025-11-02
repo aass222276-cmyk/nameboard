@@ -227,7 +227,7 @@ body, html {
     z-index: 20;
     display: flex;
     flex-wrap: nowrap;
-    gap: 5px; /* [修正] 隙間を 10px から 5px に変更 */
+    /* [修正] gap: 5px; を削除 */
     align-items: flex-end; /* ボタンの高さを下揃え */
     pointer-events: none; /* ラッパー自体はタップを透過 */
 }
@@ -270,19 +270,17 @@ body, html {
     font-weight: bold;
     height: 60px; 
 }
-.selection-panel button.delete {
-    background: #c00;
-}
-.selection-panel button.delete:hover {
-    background: #e00;
+/* [修正] 重複していた .delete 定義を削除 */
+
+/* [修正] セリフコマンドに隙間を追加 */
+#selectionPanelBubble {
+    margin-left: 5px; /* リセットパネルとの隙間 */
 }
 
-/* [修正] フキダシ選択パネル（空の定義を削除） */
-
-/* [修正] ツールリセットパネルの位置はラッパーが管理 */
+/* [修正] ツールリセットパネルの位置と隙間 */
 #toolResetPanel {
-    /* bottom: 20px; を削除 */
-    order: -1; /* [維持] ロックボタンの右に来るよう、表示順を調整 */
+    order: -1; /* ロックボタンの右に来るよう、表示順を調整 */
+    margin-left: 10px; /* ロックボタンとの隙間 */
 }
 
 /* [修正] ツールリセットパネル内のボタンスタイル（位置指定削除） */
@@ -321,30 +319,29 @@ body, html {
     pointer-events: none; /* タップを透過 */
 }
 
-/* [修正] ロックボタンのスタイル（横書き・60px高） */
+/* [修正] ロックボタンのスタイル（縦書き・縦の四角） */
 #scrollLockBtn {
-  /* [修正] position, bottom, left, z-index を削除 (bottomBarが管理) */
-  order: -2; /* [維持] 一番左に配置 */
+  order: -2; /* 一番左に配置 */
 
   background: #666;
   border: 1px solid #888;
   color: white;
 
-  /* [修正] 横書きスタイル */
-  writing-mode: horizontal-tb;
-  text-orientation: mixed;
-  white-space: nowrap;
-  width: auto;
-  height: 60px; /* [修正] 他のボタンの高さと合わせる */
-  min-width: 55px; 
-  padding: 6px 12px; /* [修正] パディング調整 */
-  display: inline-flex;
+  /* [修正] 縦書き・縦の四角スタイル */
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  white-space: normal;
+  width: auto;      /* [修正] 幅は自動 */
+  height: 60px;     /* [修正] 高さを60pxに */
+  min-width: 30px;  /* [修正] 最小幅 */
+  padding: 10px 6px; /* [修正] 縦書き用パディング */
+  display: flex;    /* [修正] 中央揃えのため */
   align-items: center;
   justify-content: center;
   line-height: 1.2;
-  font-size: 0.9rem;
+  font-size: 0.8rem; /* [修正] 少し小さく */
   font-weight: bold;
-  border-radius: 4px; /* [修正] 円形をやめる */
+  border-radius: 4px; /* 四角 */
   box-sizing: border-box;
 }
 #scrollLockBtn.active {
