@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>試たかしまネームエディタ</title>
+  <title>❤たかしまネームエディタ❤</title>
 
   <link rel="stylesheet" href="./style.css">
 
@@ -41,8 +41,8 @@
 
         <button id="btnSerif" class="tool-toggle" title="セリフ (S)">セ<br>リ<br>フ</button>
         <button id="btnKoma" class="tool-toggle" title="コマ枠 (K)">コ<br>マ<br>割</button>
-
         <button id="btnDraw" class="tool-toggle" title="描画 (D)">描<br>画</button>
+        
         <div class="separator"></div>
 
         <button id="btnCopyText" title="テキストコピー">コ<br>ピ<br>ー</button>
@@ -59,13 +59,15 @@
     </div>
 
     <div id="fontSliderPanel">
-        <input type="range" id="sliderFontSize" min="10" max="48" value="16" title="文字サイズ">
-        <div id="fontSizeValueDisplay">16px</div>
+        <input type="range" id="sliderFontSize" min="10" max="48" value="20" title="文字サイズ">
+        <input type="number" id="fontSizeValueInput" min="10" max="48" value="20">
+        <button id="fontSizeDefault">デフォルト</button>
     </div>
     
     <div id="lineWidthSliderPanel">
         <input type="range" id="sliderLineWidth" min="1" max="50" value="5" title="線の太さ">
-        <div id="lineWidthValueDisplay">5px</div>
+        <input type="number" id="lineWidthValueInput" min="1" max="100" value="5">
+        <button id="lineWidthDefault">デフォルト</button>
     </div>
     <div id="canvasContainer">
         </div>
@@ -77,12 +79,10 @@
         <button id="scrollLockBtn" title="スクロール固定 (L)">ロ<br>ッ<br>ク</button>
 
         <div id="toolResetPanel" class="selection-panel">
-            <button id="btnResetPanels" class="delete" title="このページのコマ枠をリセット">コマ割り<br>ページ<br>リセット</button>
-            <button id="btnResetBubbles" class="delete" title="このページのセリフをリセット">セリフ<br>ページ<br>リセット</button>
-            
-            <button id="btnResetDrawing" class="delete" title="このページの描画をリセット">描画<br>ページ<br>リセット</button>
-            </div>
-
+            <button id="btnResetPanels" class="delete" title="このページのコマ枠をリセット">コマ割り<br>Ｐリセット</button>
+            <button id="btnResetBubbles" class="delete" title="このページのセリフをリセット">セリフ<br>Ｐリセット</button>
+            <button id="btnResetDrawing" class="delete" title="このページの描画をリセット">描画<br>Ｐリセット</button>
+        </div>
         <div id="selectionPanelBubble" class="selection-panel">
             <button id="deleteBubble" class="delete vertical-btn">削除</button>
             <button id="shapeRect" class="vertical-btn">四角</button>
@@ -94,7 +94,8 @@
             <button id="btnPen" class="vertical-btn active">ペン</button>
             <button id="btnEraser" class="vertical-btn">消しゴム</button>
         </div>
-        </div>
+
+    </div>
 
     <div id="pageIndicator">1 / 1</div>
 
