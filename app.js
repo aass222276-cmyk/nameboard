@@ -1,3 +1,19 @@
+// ======[修正箇所 (デバウンス関数)]======
+// [新設] リサイズイベントの頻発を防ぐ（遅延バグ対策）
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+// ======[修正ここまで]======
+
+
 // [修正済] Canvas描画時に90度回転させる記号リスト
 const ROTATE_CHARS = new Set([
     '(', ')', '-', '=', '?', '!', '「', '」', '（', '）', 'ー', '？', '！', 
@@ -8,7 +24,7 @@ const ROTATE_CHARS = new Set([
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 定数 ---
-    const STORAGE_KEY = 'manganame-v16-final'; // [修正] バージョンアップ
+    const STORAGE_KEY = 'manganame-v17-perf'; // [修正] バージョンアップ
     const B5_ASPECT_RATIO = Math.sqrt(2); 
     const PAGE_FRAME_PADDING = 15; 
     const GUTTER_H = 18; 
@@ -20,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SNAP_ANGLE_THRESHOLD = 15; 
     const KOMA_TAP_THRESHOLD = 3; 
     const CHARS_PER_COLUMN = 12;
-    const CANVAS_BG_COLOR = '#FFFFFF'; // [修正済] 描画キャンバスの背景色
-
+    const CANVAS_BG_COLOR = '#FFFFFF'; 
 
     // --- DOM要素 ---
     const canvasContainer = document.getElementById('canvasContainer');
@@ -59,32 +74,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnEraser = document.getElementById('btnEraser');
     const btnResetDrawing = document.getElementById('btnResetDrawing');
     
-    // ======[修正箇所 (px表示 -> input)]======
+    // [修正済] px表示 -> input
     const fontSizeValueInput = document.getElementById('fontSizeValueInput');
     const fontSizeDefault = document.getElementById('fontSizeDefault');
     const lineWidthValueInput = document.getElementById('lineWidthValueInput');
     const lineWidthDefault = document.getElementById('lineWidthDefault');
-    // ======[修正ここまで]======
 
 
     // --- アプリケーション状態 ---
-    // ======[修正箇所 (デフォルト値)]======
+    // [修正済] デフォルト値
     const DEFAULT_FONT_SIZE = 20;
     const DEFAULT_PEN_WIDTH = 5;
     const DEFAULT_ERASER_WIDTH = 40;
-    // ======[修正ここまで]======
 
     let state = {
         pages: [], 
         currentPageIndex: 0, 
         currentTool: null, 
-        defaultFontSize: DEFAULT_FONT_SIZE, // [修正]
+        defaultFontSize: DEFAULT_FONT_SIZE, 
         selectedBubbleId: null,
         dpr: window.devicePixelRatio || 1,
         isScrollLocked: false, 
         currentDrawTool: 'pen', 
-        currentLineWidth: DEFAULT_PEN_WIDTH, // [修正]
-        eraserWidth: DEFAULT_ERASER_WIDTH, // [修正]
+        currentLineWidth: DEFAULT_PEN_WIDTH, 
+        eraserWidth: DEFAULT_ERASER_WIDTH, 
     };
     
     let pageElements = []; 
@@ -156,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 初期化 ---
     function init() {
         registerServiceWorker();
-        loadState(); // [修正] loadState が input の値も設定する
-        setupEventListeners();
+        loadState(); 
+        setupEventListeners(); // [修正] デバウンスをここで設定
         createPageDOMElements();
         
         requestAnimationFrame(() => {
@@ -187,7 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 pages: state.pages,
                 currentPageIndex: state.currentPageIndex,
                 defaultFontSize: state.defaultFontSize,
-                // [修正] 描画の太さも保存
                 currentLineWidth: state.currentLineWidth,
                 eraserWidth: state.eraserWidth,
             };
@@ -197,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ======[修正箇所 (loadState)]======
+    // [修正済] loadState
     function loadState() {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
@@ -207,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.pages = loadedData.pages || [];
                     state.currentPageIndex = loadedData.currentPageIndex || 0;
                     state.defaultFontSize = loadedData.defaultFontSize || DEFAULT_FONT_SIZE;
-                    // [修正] 描画の太さも読み込む
                     state.currentLineWidth = loadedData.currentLineWidth || DEFAULT_PEN_WIDTH;
                     state.eraserWidth = loadedData.eraserWidth || DEFAULT_ERASER_WIDTH;
                     
@@ -231,23 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
             initNewState();
         }
         
-        // [修正] スライダーと「input」の両方に値を設定
         sliderFontSize.value = state.defaultFontSize;
         fontSizeValueInput.value = state.defaultFontSize;
         
-        // [修正] 線幅スライダーも初期化
         const currentDrawWidth = (state.currentDrawTool === 'pen') ? state.currentLineWidth : state.eraserWidth;
         sliderLineWidth.value = currentDrawWidth;
         lineWidthValueInput.value = currentDrawWidth;
     }
-    // ======[修正ここまで]======
     
     
     function initNewState() {
         state.pages = [];
         state.pages.push(createNewPage(null)); 
         state.currentPageIndex = 0;
-        // [修正] state のデフォルト値もリセット
         state.defaultFontSize = DEFAULT_FONT_SIZE;
         state.currentLineWidth = DEFAULT_PEN_WIDTH;
         state.eraserWidth = DEFAULT_ERASER_WIDTH;
@@ -303,7 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageElements.length === 0) return;
         const firstWrapper = pageElements[0].wrapper;
         if (!firstWrapper.clientWidth) {
-            setTimeout(resizeAllCanvas, 50);
+            // [修正] デバウンスと競合しないよう、タイマーを短く
+            setTimeout(resizeAllCanvas, 50); 
             return;
         }
         const cssWidth = firstWrapper.clientWidth;
@@ -576,8 +584,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ======[修正箇所 (イベントリスナー設定)]======
+    // [修正] デバウンスをここで適用
+    const debouncedResizeAllCanvas = debounce(resizeAllCanvas, 200);
+
     function setupEventListeners() {
-        window.addEventListener('resize', resizeAllCanvas);
+        window.addEventListener('resize', debouncedResizeAllCanvas); // [修正] デバウンス
         
         // ツールバー
         btnSerif.addEventListener('click', () => setTool('serif'));
@@ -628,8 +639,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // その他
         bubbleEditor.addEventListener('input', onBubbleEditorInput);
         bubbleEditor.addEventListener('blur', hideBubbleEditor);
-        bubbleEditor.addEventListener('keydown', onBubbleEditorKeyDown);
+        bubbleEditor.addEventListener('keydown', onKeyDown);
         window.addEventListener('keydown', onKeyDown);
+GLOBAL.removeEventListener("keydown", onKeyDown)
         scrollLockBtn.addEventListener('click', toggleScrollLock);
         
         setupZoomPrevention();
@@ -713,34 +725,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======[修正箇所 (Inputイベント)]======
-    // [修正] prompt -> input
+    // [新設] prompt -> input
     function onFontSizeInput(e) {
         const newSize = parseInt(e.target.value, 10);
         if (isNaN(newSize)) return;
         
+        // 値のバリデーションと丸め
         if (newSize < 10) {
+            e.target.value = 10;
             applyFontSize(10);
             return;
         }
         if (newSize > 48) {
+            e.target.value = 48;
             applyFontSize(48);
             return;
         }
-        applyFontSize(newSize, false); // Inputからの変更はスライダーを更新するだけ
+        applyFontSize(newSize, false); // Inputからの変更
     }
     function handleSliderChange(e) {
         const newSize = parseInt(e.target.value, 10);
-        applyFontSize(newSize, true); // スライダーからはInputも更新
+        applyFontSize(newSize, true); // スライダーからの変更
     }
     // [修正] applyFontSize に、連動元を制御するフラグを追加
     function applyFontSize(newSize, fromSlider = false) {
         state.defaultFontSize = newSize;
         
-        // 連動
         sliderFontSize.value = newSize; 
-        if (!fromSlider) {
-            // スライダーを動かした時は、inputを更新する必要はない (inputイベントが発火するため)
-        }
         fontSizeValueInput.value = newSize;
         
         const selectedBubble = getSelectedBubble();
@@ -754,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             saveAndRenderActivePage();
         }
-        saveState(); // [修正] デフォルト値の変更を保存
+        saveState(); 
     }
     // ======[修正ここまで]======
 
@@ -766,10 +777,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isNaN(newSize)) return;
         
         if (newSize < 1) {
+            e.target.value = 1;
             applyLineWidth(1);
             return;
         }
         if (newSize > 100) {
+            e.target.value = 100;
             applyLineWidth(100);
             return;
         }
@@ -787,16 +800,15 @@ document.addEventListener('DOMContentLoaded', () => {
             state.eraserWidth = newSize;
         }
         
-        // 連動
         sliderLineWidth.value = newSize;
-        if (!fromSlider) {
-            // スライダーを動かした時は、inputを更新する必要はない (inputイベントが発火するため)
-        }
         lineWidthValueInput.value = newSize;
         
-        const currentDrawingCtx = pageElements[state.currentPageIndex].drawingCtx;
-        applyDrawingContextSettings(currentDrawingCtx);
-        saveState(); // [修正] デフォルト値の変更を保存
+        // アクティブなページのコンテキストにのみ適用
+        if (pageElements[state.currentPageIndex]) {
+            const currentDrawingCtx = pageElements[state.currentPageIndex].drawingCtx;
+            applyDrawingContextSettings(currentDrawingCtx);
+        }
+        saveState(); 
     }
     
     // [修正済] 描画ツールの切り替え
@@ -810,8 +822,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPen.classList.toggle('active', toolName === 'pen');
         btnEraser.classList.toggle('active', toolName === 'eraser');
         
-        const currentDrawingCtx = pageElements[state.currentPageIndex].drawingCtx;
-        applyDrawingContextSettings(currentDrawingCtx);
+        if (pageElements[state.currentPageIndex]) {
+            const currentDrawingCtx = pageElements[state.currentPageIndex].drawingCtx;
+            applyDrawingContextSettings(currentDrawingCtx);
+        }
     }
     // ======[修正ここまで]======
     
@@ -1047,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePageIndices();
         resizeAllCanvas(); 
         setActivePage(newIndex, true);
-        saveState(); // [修正] saveState は最後
+        saveState(); 
     }
 
     // [修正済] 描画リセットも
@@ -1105,11 +1119,10 @@ document.addEventListener('DOMContentLoaded', () => {
             page.drawingData = null;
             const cssWidth = el.drawingCanvas.width / state.dpr;
             const cssHeight = el.drawingCanvas.height / state.dpr;
-            // [修正] 白で塗りつぶす
             el.drawingCtx.fillStyle = CANVAS_BG_COLOR;
             el.drawingCtx.fillRect(0, 0, cssWidth, cssHeight);
             
-            saveCurrentDrawing(state.currentPageIndex); // 空の状態を保存
+            saveCurrentDrawing(state.currentPageIndex); 
         }
     }
 
@@ -1451,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const startX = frame.x + fw - 30; 
             const startY = frame.y + 30; 
             let currentX = startX, currentY = startY;
-            pageContent.bubbles.forEach((text) => {
+            pageContent.forEach((text) => {
                 const bubble = {
                     id: `bubble_import_${Date.now()}_${bubbleSeq++}`,
                     x: currentX, y: currentY, 
@@ -1582,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = URL.createObjectURL(content);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'manganame_v16.zip'; 
+                a.download = 'manganame_v17.zip'; // [修正] バージョン
                 a.click();
                 URL.revokeObjectURL(url);
             });

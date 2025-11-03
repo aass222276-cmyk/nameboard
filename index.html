@@ -61,13 +61,15 @@
     <div id="fontSliderPanel">
         <input type="range" id="sliderFontSize" min="10" max="48" value="20" title="文字サイズ">
         <input type="number" id="fontSizeValueInput" min="10" max="48" value="20">
-        <button id="fontSizeDefault">デフォルト</button>
+        <span class="px-label">px</span>
+        <button id="fontSizeDefault" class="default-btn" title="デフォルト値に戻す">↺</button>
     </div>
     
     <div id="lineWidthSliderPanel">
         <input type="range" id="sliderLineWidth" min="1" max="50" value="5" title="線の太さ">
         <input type="number" id="lineWidthValueInput" min="1" max="100" value="5">
-        <button id="lineWidthDefault">デフォルト</button>
+        <span class="px-label">px</span>
+        <button id="lineWidthDefault" class="default-btn" title="デフォルト値に戻す">↺</button>
     </div>
     <div id="canvasContainer">
         </div>
@@ -91,11 +93,10 @@
         </div>
 
         <div id="selectionPanelDraw" class="selection-panel">
-            <button id="btnPen" class="vertical-btn active">ペン</button>
-            <button id="btnEraser" class="vertical-btn">消しゴム</button>
+            <button id="btnPen" class="active">ペン</button>
+            <button id="btnEraser">消しゴム</button>
         </div>
-
-    </div>
+        </div>
 
     <div id="pageIndicator">1 / 1</div>
 
