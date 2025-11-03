@@ -853,11 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // (変更なし)
     function onPointerDown(e) {
         const pageIndex = getPageIndex(e);
-        
-        // ========== [バグ修正1] ==========
-        setActivePage(pageIndex, true); // [修正] falseからtrueに変更し、タップしたページにスクロールする
-        // ================================
-
+        setActivePage(pageIndex, false); 
         const { x, y } = getCanvasCoords(e);
         const page = getCurrentPage();
         if (!page) return;
@@ -1218,26 +1214,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBubbleEditorPosition(bubble) {
       const el = pageElements[state.currentPageIndex];
       if (!el) return;
-      const r = el.mainCanvas.getBoundingClientRect(); // mainCanvas を基準に
-      const w = bubble.w; 
+
+      const r = el.mainCanvas.getBoundingClientRect(); // ビューポート基準
+      const w = bubble.w;
       const h = bubble.h;
+
       bubbleEditor.style.width  = `${w}px`;
       bubbleEditor.style.height = `${h}px`;
-      const left = r.left + bubble.x - w;   
-      const viewportTop = r.top + bubble.y;
-      const viewportCenterY = window.innerHeight / 2;
-      const pageScrollY = window.scrollY || document.documentElement.scrollTop;
-      let finalAbsTop; 
-      
-      // ========== [バグ修正2] ==========
-      if (viewportTop < viewportCenterY) { // [修正] フキダシが画面中央より「上」にある場合 (不等号を逆転)
-          finalAbsTop = pageScrollY + viewportCenterY; // Editorを「画面中央」に固定 (見切れないように)
-      } else { // フキダシが画面中央より「下」にある場合
-          finalAbsTop = viewportTop + pageScrollY; // Editorを「フキダシの位置」に合わせる
-      }
-      // ================================
 
-      bubbleEditor.style.transform = `translate(${left}px, ${finalAbsTop}px)`;
+      // ビューポート座標のみで配置（スクロール量を加算しない）
+      const left = r.left + bubble.x - w;    // バブルは右上原点なので -w
+      const top  = r.top  + bubble.y;
+
+      // 画面から大きくはみ出るのを軽減する軽いクランプ（任意）
+      const vpW = window.innerWidth;
+      const vpH = window.innerHeight;
+      const clampedLeft = Math.max(0, Math.min(left, vpW - w));
+      const clampedTop  = Math.max(0, Math.min(top,  vpH - h));
+
+      bubbleEditor.style.transform = `translate(${clampedLeft}px, ${clampedTop}px)`;
       bubbleEditor.style.left = '0px';
       bubbleEditor.style.top  = '0px';
     }
@@ -1561,13 +1556,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // (2) [修正] 描画データを復元 (非同期)
         return new Promise((resolve) => {
-
-            // ========== [バグ修正3] ==========
-            // [修正] L1308にあった宣言を、コールバックの前に移動
-            const cssWidth = baseWidth;
-            const cssHeight = baseHeight;
-            // ================================
-
             const imgString = page.drawingData;
             if (imgString) {
                 const img = new Image();
@@ -1591,8 +1579,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 resolve(offCanvas); // (4) 完成したCanvasを返す
             }
             
-            // [修正] 元のロジックでは... (L1306からL1309のコメントと宣言を削除)
-            
+            // [修正] 元のロジックでは描画レイヤーのcssWidth/cssHeightが未定義だったため修正
+            // この関数はエディタのDOMに依存しないため、
+            // offCanvasのサイズを基準にする
+            const cssWidth = baseWidth;
+            const cssHeight = baseHeight;
         });
     }
 
