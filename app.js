@@ -853,7 +853,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // (変更なし)
     function onPointerDown(e) {
         const pageIndex = getPageIndex(e);
-        setActivePage(pageIndex, false); 
+        
+        // ========== [バグ修正1] ==========
+        setActivePage(pageIndex, true); // [修正] falseからtrueに変更し、タップしたページにスクロールする
+        // ================================
+
         const { x, y } = getCanvasCoords(e);
         const page = getCurrentPage();
         if (!page) return;
@@ -1224,11 +1228,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const viewportCenterY = window.innerHeight / 2;
       const pageScrollY = window.scrollY || document.documentElement.scrollTop;
       let finalAbsTop; 
-      if (viewportTop > viewportCenterY) {
-          finalAbsTop = pageScrollY + viewportCenterY;
-      } else {
-          finalAbsTop = viewportTop + pageScrollY;
+      
+      // ========== [バグ修正2] ==========
+      if (viewportTop < viewportCenterY) { // [修正] フキダシが画面中央より「上」にある場合 (不等号を逆転)
+          finalAbsTop = pageScrollY + viewportCenterY; // Editorを「画面中央」に固定 (見切れないように)
+      } else { // フキダシが画面中央より「下」にある場合
+          finalAbsTop = viewportTop + pageScrollY; // Editorを「フキダシの位置」に合わせる
       }
+      // ================================
+
       bubbleEditor.style.transform = `translate(${left}px, ${finalAbsTop}px)`;
       bubbleEditor.style.left = '0px';
       bubbleEditor.style.top  = '0px';
@@ -1553,6 +1561,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // (2) [修正] 描画データを復元 (非同期)
         return new Promise((resolve) => {
+
+            // ========== [バグ修正3] ==========
+            // [修正] L1308にあった宣言を、コールバックの前に移動
+            const cssWidth = baseWidth;
+            const cssHeight = baseHeight;
+            // ================================
+
             const imgString = page.drawingData;
             if (imgString) {
                 const img = new Image();
@@ -1576,11 +1591,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 resolve(offCanvas); // (4) 完成したCanvasを返す
             }
             
-            // [修正] 元のロジックでは描画レイヤーのcssWidth/cssHeightが未定義だったため修正
-            // この関数はエディタのDOMに依存しないため、
-            // offCanvasのサイズを基準にする
-            const cssWidth = baseWidth;
-            const cssHeight = baseHeight;
+            // [修正] 元のロジックでは... (L1306からL1309のコメントと宣言を削除)
+            
         });
     }
 
