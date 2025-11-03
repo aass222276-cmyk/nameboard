@@ -80,12 +80,13 @@ body, html {
     line-height: 1.1;  
 }
 
-/* ======[修正箇所 (ページボタンの幅を広げる)]====== */
-#toolbar #btnPageDelete,
+/* ======[修正箇所 (ボタン幅の指定を削除)]====== */
+/* #toolbar #btnPageDelete,
 #toolbar #btnPageAddBefore,
 #toolbar #btnPageAddAfter {
-    min-width: 38px; /* 30px から少し広げる */
-}
+    min-width: 38px;
+} 
+*/
 /* ======[修正ここまで]====== */
 
 
@@ -104,12 +105,6 @@ body, html {
     margin-right: 4px;
 }
 
-/* ======[修正箇所 (ツールバーからスライダーのスタイルを削除)]====== */
-/* #sliderFontSize { ... } */
-/* #fontSizeValueDisplay { ... } */
-/* ======[修正ここまで]====== */
-
-
 /* [v15修正] 新しいリセットボタンのスタイル */
 #btnReset, #btnResetPage, #btnResetPanels, #btnResetBubbles {
     background: #a00;
@@ -119,7 +114,7 @@ body, html {
 }
 
 
-/* ======[修正箇所 (フォントスライダーパネルのスタイルを新設)]====== */
+/* ======[修正箇所 (フォントスライダーパネルのスタイルを修正)]====== */
 #fontSliderPanel {
     display: none; /* JSで .show をつけるまで非表示 */
     position: fixed;
@@ -130,6 +125,7 @@ body, html {
     padding: 8px 10px;
     z-index: 99; /* ツールバーの直下 */
     align-items: center;
+    justify-content: center; /* [修正] 中央揃え */
     gap: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     height: 40px; /* 高さを固定 */
@@ -141,31 +137,30 @@ body, html {
 
 /* スライダー本体のスタイル (幅を広げる) */
 #fontSliderPanel #sliderFontSize {
-    width: 150px; /* 60px から大幅に広げる */
+    width: 180px; /* [修正] 150px -> 180px (1.2倍) */
     flex-shrink: 0;
     height: auto; 
     margin: 0;
 }
-/* px表示部のスタイル (元のスタイルを流用・調整) */
+/* px表示部のスタイル (横書き用に調整) */
 #fontSliderPanel #fontSizeValueDisplay {
     background: #666;
     border: 1px solid #888;
     color: white;
-    padding: 4px 2px;
+    padding: 4px 6px; /* [修正] 横書き用にpadding調整 */
     border-radius: 4px;
     font-weight: bold;
     flex-shrink: 0;
-    white-space: normal;
-    line-height: 1.2;
+    white-space: nowrap; /* [修正] "16px" が改行しないように */
     font-size: 0.8rem;
     height: calc(100% - 8px); /* パネルの高さに合わせる */
     box-sizing: border-box;
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */ /* [修正] 縦積みではないので削除 */
     justify-content: center;
     align-items: center;
     text-align: center;
-    min-width: 28px;
+    min-width: 32px; /* [修正] "48px" などが入るよう調整 */
     cursor: pointer; /* クリック可能であることを示す */
 }
 /* ======[修正ここまで]====== */

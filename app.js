@@ -22,9 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const BUBBLE_LINE_HEIGHT = 1.2; 
     const SNAP_ANGLE_THRESHOLD = 15; 
     const KOMA_TAP_THRESHOLD = 3; 
-    // ======[修正箇所 (12文字折り返し)]======
-    const CHARS_PER_COLUMN = 12; // 12文字で自動折り返し
-    // ======[修正ここまで]======
+    const CHARS_PER_COLUMN = 12; // [修正済] 12文字で自動折り返し
 
 
     // --- DOM要素 ---
@@ -33,9 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnKoma = document.getElementById('btnKoma');
     const sliderFontSize = document.getElementById('sliderFontSize');
     const fontSizeValueDisplay = document.getElementById('fontSizeValueDisplay'); 
-    // ======[修正箇所 (フォントパネル)]======
-    const fontSliderPanel = document.getElementById('fontSliderPanel'); // 新しいパネル
-    // ======[修正ここまで]======
+    const fontSliderPanel = document.getElementById('fontSliderPanel'); // [修正済] 新しいパネル
     const btnPageAddBefore = document.getElementById('btnPageAddBefore');
     const btnPageAddAfter = document.getElementById('btnPageAddAfter');
     const btnPageDelete = document.getElementById('btnPageDelete');
@@ -183,6 +179,7 @@ function endAutoScrollLock(){
         }
     }
 
+    // ======[修正箇所 (loadState)]======
     function loadState() {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
@@ -209,8 +206,10 @@ function endAutoScrollLock(){
             initNewState();
         }
         sliderFontSize.value = state.defaultFontSize;
-        fontSizeValueDisplay.innerHTML = `${state.defaultFontSize}<br>px`;
+        // [修正] <br> を削除
+        fontSizeValueDisplay.innerHTML = `${state.defaultFontSize}px`; 
     }
+    // ======[修正ここまで]======
     
     // [v15新設]
     function initNewState() {
@@ -304,6 +303,7 @@ function endAutoScrollLock(){
 
     // --- UI更新 ---
     // ======[修正箇所 (updateUI)]======
+    // [修正済] フォントスライダーパネルの表示ロジック
     function updateUI() {
         // ツールバーのボタン状態
         btnSerif.classList.toggle('active', state.currentTool === 'serif');
@@ -330,8 +330,7 @@ function endAutoScrollLock(){
         const selectedBubble = getSelectedBubble();
         selectionPanelBubble.classList.toggle('show', !!selectedBubble);
         
-        // [新規] フォントスライダーパネルの表示制御
-        // 「セリフ」ツールがON、または「通常」モードでフキダシ選択中の場合に表示
+        // [修正済] フォントスライダーパネルの表示制御
         const showFontSlider = (state.currentTool === 'serif') || (state.currentTool === null && !!selectedBubble);
         fontSliderPanel.classList.toggle('show', showFontSlider);
 
@@ -457,7 +456,7 @@ function endAutoScrollLock(){
     }
 
     // ======[修正箇所 (drawSingleBubble)]======
-    // [修正] drawSingleBubble に「記号回転」+「12文字折り返し」ロジックを追加
+    // [修正済] 「記号回転」+「12文字折り返し」ロジック
     function drawSingleBubble(bubble, context) {
         const { x, y, w, h, shape, text, font } = bubble;
         context.save();
@@ -485,8 +484,7 @@ function endAutoScrollLock(){
         context.font = `${font}px 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif`;
         context.textAlign = 'center'; 
         
-        // [修正済] 描画基準を 'middle' に変更
-        context.textBaseline = 'middle';
+        context.textBaseline = 'middle'; // [修正済] 描画基準
 
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
@@ -497,21 +495,19 @@ function endAutoScrollLock(){
 
         let currentX = -paddingX - (columnWidth / 2);
         
-        // [修正済] 'middle' 基準にしたため、startY (Yの開始位置) も調整
-        const startY = paddingY + (charHeight * 0.9) / 2;
+        const startY = paddingY + (charHeight * 0.9) / 2; // [修正済] 'middle' 基準
 
         lines.forEach((line) => {
             let currentY = startY;
             for (let i = 0; i < line.length; i++) {
                 const char = line[i];
 
-                // --- [新規] 12文字折り返し判定 ---
-                // i>0 (最初の文字ではない) かつ i が12の倍数の時
+                // --- [修正済] 12文字折り返し判定 ---
                 if (i > 0 && i % CHARS_PER_COLUMN === 0) {
                     currentY = startY;   // Y座標をリセット
                     currentX -= columnWidth; // X座標を次の列に移動
                 }
-                // --- [新規ここまで] ---
+                // --- [修正済ここまで] ---
 
 
                 // --- [修正済] 回転ロジック ---
@@ -522,7 +518,6 @@ function endAutoScrollLock(){
                     context.fillText(char, 0, 0); 
                     context.restore();
                 } else {
-                    // 通常の文字 (回転させない)
                     context.fillText(char, currentX, currentY);
                 }
                 // --- [修正済ここまで] ---
@@ -680,11 +675,14 @@ function endAutoScrollLock(){
         applyFontSize(newSize);
     }
 
+    // ======[修正箇所 (applyFontSize)]======
     // [v15新設] フォントサイズ変更（共通処理）
     function applyFontSize(newSize) {
         state.defaultFontSize = newSize;
         sliderFontSize.value = newSize; 
-        fontSizeValueDisplay.innerHTML = `${newSize}<br>px`; 
+        
+        // [修正] <br> を削除
+        fontSizeValueDisplay.innerHTML = `${newSize}px`; 
         
         const selectedBubble = getSelectedBubble();
         if (selectedBubble) {
@@ -700,6 +698,7 @@ function endAutoScrollLock(){
             saveAndRenderActivePage();
         }
     }
+    // ======[修正ここまで]======
 
     // --- キャンバスイベント (v15: "手動" solution) ---
     function getCanvasCoords(e) {
@@ -1031,9 +1030,7 @@ function onPointerMove(e) {
         updateBubbleEditorPosition(bubble);
         bubbleEditor.focus();
         if (bubble.text) {
-            // bubbleEditor.select(); // <-- [修正済] この行を削除
-            
-            // [修正済] この行を追加 (カーソルを末尾に移動)
+            // [修正済] カーソルを末尾に移動
             bubbleEditor.setSelectionRange(bubble.text.length, bubble.text.length); 
         }
         updateUI();
@@ -1108,7 +1105,7 @@ function onBubbleEditorInput(e) {
     function onBubbleEditorKeyDown(e) { /* Escはグローバルで処理 */ }
 
     // ======[修正箇所 (measureBubbleSize)]======
-    // [修正] 12文字折り返しを考慮したサイズ測定
+    // [修正済] 12文字折り返しを考慮したサイズ測定
     function measureBubbleSize(bubble) {
         const { text, font, shape } = bubble; 
         const lines = text.split('\n');
@@ -1145,6 +1142,10 @@ function onBubbleEditorInput(e) {
 
         if (lines.length === 0 || text.length === 0) {
              maxHeight = font; // テキストが何もない場合は、1文字分の高さを確保
+        }
+        
+        if (totalColumns === 0) {
+            totalColumns = 1; // 完全に空でも1列分の幅は確保
         }
 
         const totalWidth = totalColumns * columnWidth;
