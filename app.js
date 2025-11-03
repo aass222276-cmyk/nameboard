@@ -167,7 +167,29 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePageIndicator(); 
             // [修正] 最初のページの描画コンテキストを初期化
             applyDrawingContextSettings(pageElements[state.currentPageIndex].drawingCtx);
-        });
+        
+    // 入力中に画面が動いたら中央位置を更新
+    if (window.visualViewport) {
+        const vv = window.visualViewport;
+        const _recenter = () => {
+            if (bubbleEditor.style.display === 'block') {
+                const b = getSelectedBubble();
+                if (b) updateBubbleEditorPosition(b);
+            }
+        };
+        vv.addEventListener('resize', _recenter);
+        vv.addEventListener('scroll', _recenter);
+    } else {
+        const _recenter = () => {
+            if (bubbleEditor.style.display === 'block') {
+                const b = getSelectedBubble();
+                if (b) updateBubbleEditorPosition(b);
+            }
+        };
+        window.addEventListener('resize', _recenter);
+        window.addEventListener('scroll', _recenter, { passive: true });
+    }
+});
     }
 
     // --- PWA (Service Worker) (変更なし) ---
@@ -1200,6 +1222,9 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selectedBubbleId = bubble.id;
         bubbleEditor.value = bubble.text;
         bubbleEditor.style.display = 'block';
+        bubbleEditor.style.position = 'fixed';
+        bubbleEditor.style.left = '0px';
+        bubbleEditor.style.top = '0px';
         bubbleEditor.style.fontSize = '16px';
         bubbleEditor.style.lineHeight = `${BUBBLE_LINE_HEIGHT}`;
         updateBubbleEditorPosition(bubble);
@@ -1212,27 +1237,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // [修正済] 画面中央固定
     function updateBubbleEditorPosition(bubble) {
-      const el = pageElements[state.currentPageIndex];
-      if (!el) return;
-
-      const r = el.mainCanvas.getBoundingClientRect(); // ビューポート基準
+      // 画面中央（iOSキーボード考慮: VisualViewport）に固定配置
       const w = bubble.w;
       const h = bubble.h;
 
       bubbleEditor.style.width  = `${w}px`;
       bubbleEditor.style.height = `${h}px`;
 
-      // ビューポート座標のみで配置（スクロール量を加算しない）
-      const left = r.left + bubble.x - w;    // バブルは右上原点なので -w
-      const top  = r.top  + bubble.y;
+      // ビューポート情報（VisualViewportがあれば優先）
+      const vv = window.visualViewport;
+      const vpW = vv ? vv.width  : window.innerWidth;
+      const vpH = vv ? vv.height : window.innerHeight;
+      const offsetLeft = vv ? vv.offsetLeft : 0;
+      const offsetTop  = vv ? vv.offsetTop  : 0;
 
-      // 画面から大きくはみ出るのを軽減する軽いクランプ（任意）
-      const vpW = window.innerWidth;
-      const vpH = window.innerHeight;
-      const clampedLeft = Math.max(0, Math.min(left, vpW - w));
-      const clampedTop  = Math.max(0, Math.min(top,  vpH - h));
+      // iOSキーボードで下が狭くなる前提で、やや上に寄せる（0.35）
+      const cx = offsetLeft + vpW / 2;
+      const cy = offsetTop  + vpH * 0.35;
 
-      bubbleEditor.style.transform = `translate(${clampedLeft}px, ${clampedTop}px)`;
+      const left = Math.round(cx - w / 2);
+      const top  = Math.round(cy - h / 2);
+
+      bubbleEditor.style.transform = `translate(${left}px, ${top}px)`;
+      bubbleEditor.style.left = '0px';
+      bubbleEditor.style.top  = '0px';
+    }px`;
+      bubbleEditor.style.height = `${h}px`;
+      const left = r.left + bubble.x - w;   
+      const viewportTop = r.top + bubble.y;
+      const viewportCenterY = window.innerHeight / 2;
+      const pageScrollY = window.scrollY || document.documentElement.scrollTop;
+      let finalAbsTop; 
+      if (viewportTop > viewportCenterY) {
+          finalAbsTop = pageScrollY + viewportCenterY;
+      } else {
+          finalAbsTop = viewportTop + pageScrollY;
+      }
+      bubbleEditor.style.transform = `translate(${left}px, ${finalAbsTop}px)`;
       bubbleEditor.style.left = '0px';
       bubbleEditor.style.top  = '0px';
     }
