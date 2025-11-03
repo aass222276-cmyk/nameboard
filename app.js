@@ -1,3 +1,14 @@
+// [新規] Canvas描画時に90度回転させる記号リスト (グローバルに追加)
+const ROTATE_CHARS = new Set([
+    // 半角
+    '(', ')', '-', '=', '?', '!',
+    // 全角
+    '「', '」', '（', '）', 'ー', '？', '！', 
+    '【', '】', '～', '＝', '＆', '。', '、', '…'
+    // ※ '!?' は '!' と '?' の2文字として処理されます
+]);
+
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 定数 (v15) ---
@@ -432,7 +443,8 @@ function endAutoScrollLock(){
         });
     }
 
-    // [修正] drawSingleBubble に「枠無」処理を追加
+    // ======[修正箇所 (drawSingleBubble)]======
+    // [修正] drawSingleBubble に「記号回転ロジック」を追加
     function drawSingleBubble(bubble, context) {
         const { x, y, w, h, shape, text, font } = bubble;
         context.save();
@@ -459,7 +471,12 @@ function endAutoScrollLock(){
         context.fillStyle = 'black';
         context.font = `${font}px 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif`;
         context.textAlign = 'center'; 
-        context.textBaseline = 'top';
+        
+        // --- [修正] 描画基準を 'top' から 'middle' に変更 ---
+        // これにより、回転の中心計算が容易になります
+        context.textBaseline = 'middle';
+        // --- [修正ここまで] ---
+
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
         const charHeight = font * BUBBLE_LINE_HEIGHT;  
@@ -469,18 +486,43 @@ function endAutoScrollLock(){
         const paddingY = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_Y;
 
         let currentX = -paddingX - (columnWidth / 2);
-        const startY = paddingY;
+        
+        // --- [修正] 'middle' 基準にしたため、startY (Yの開始位置) も調整 ---
+        // (paddingY) だったものを (paddingY + 半文字分の高さ) にします
+        const startY = paddingY + (charHeight * 0.9) / 2;
+        // --- [修正ここまで] ---
+
         lines.forEach((line) => {
             let currentY = startY;
             for (let i = 0; i < line.length; i++) {
                 const char = line[i];
-                context.fillText(char, currentX, currentY);
+
+                // --- [修正] ここからが回転ロジックです ---
+                if (ROTATE_CHARS.has(char)) {
+                    // (1) 描画状態を一時保存
+                    context.save();
+                    // (2) 描画中心 (currentX, currentY) に移動
+                    context.translate(currentX, currentY);
+                    // (3) 90度 (PI/2ラジアン) 回転
+                    context.rotate(Math.PI / 2);
+                    // (4) 回転した中心 (0, 0) に文字を描画
+                    context.fillText(char, 0, 0); 
+                    // (5) 描画状態を元に戻す (回転と位置をリセット)
+                    context.restore();
+                } else {
+                    // 通常の文字 (回転させない)
+                    context.fillText(char, currentX, currentY);
+                }
+                // --- [修正ここまで] ---
+
                 currentY += charHeight * 0.9; 
             }
             currentX -= columnWidth; 
         });
         context.restore();
     }
+    // ======[修正ここまで]======
+
 
     function drawSelection(page, context) {
         // フキダシ選択 (右上アンカー)
@@ -961,6 +1003,7 @@ function onPointerMove(e) {
         return null;
     }
 
+    // ======[修正箇所 (showBubbleEditor)]======
     function showBubbleEditor(bubble) {
         hideBubbleEditor(); 
         state.selectedBubbleId = bubble.id;
@@ -974,30 +1017,61 @@ function onPointerMove(e) {
         updateBubbleEditorPosition(bubble);
         bubbleEditor.focus();
         if (bubble.text) {
-            bubbleEditor.select();
+            // bubbleEditor.select(); // <-- [修正] この行を削除またはコメントアウト
+            
+            // [修正] この行を追加 (カーソルを末尾に移動)
+            bubbleEditor.setSelectionRange(bubble.text.length, bubble.text.length); 
         }
         updateUI();
         renderActivePage();
     }
+    // ======[修正ここまで]======
     
-function updateBubbleEditorPosition(bubble) {
-  const canvas = pageElements[state.currentPageIndex].canvas;
-  const r = canvas.getBoundingClientRect();
-  const scrollY = canvasContainer.scrollTop;
+    // ======[修正箇所 (updateBubbleEditorPosition)]======
+    function updateBubbleEditorPosition(bubble) {
+      const canvas = pageElements[state.currentPageIndex].canvas;
+      const r = canvas.getBoundingClientRect();
+      // const scrollY = canvasContainer.scrollTop; // <-- [修正] この行を削除
 
-  const w = bubble.w; // 物理の横幅（列の合計）
-  const h = bubble.h; // 物理の縦幅（1列の長さ）
+      const w = bubble.w; // 物理の横幅（列の合計）
+      const h = bubble.h; // 物理の縦幅（1列の長さ）
 
-  bubbleEditor.style.width  = `${w}px`;
-  bubbleEditor.style.height = `${h}px`;
+      bubbleEditor.style.width  = `${w}px`;
+      bubbleEditor.style.height = `${h}px`;
 
-  const left = r.left + bubble.x - w;   // 右上アンカー
-  const top  = r.top  + scrollY + bubble.y;
+      const left = r.left + bubble.x - w;   // 右上アンカー (X座標)
 
-  bubbleEditor.style.transform = `translate(${left}px, ${top}px)`;
-  bubbleEditor.style.left = '0px';
-  bubbleEditor.style.top  = '0px';
-}
+      // --- [修正] Y座標の計算ロジックをすべて変更 ---
+
+      // 1. フキダシの「画面（ビューポート）上」でのY座標を計算
+      const viewportTop = r.top + bubble.y;
+      
+      // 2. 画面（ビューポート）の中央Y座標
+      const viewportCenterY = window.innerHeight / 2;
+      
+      // 3. ページ全体のスクロール量を取得
+      const pageScrollY = window.scrollY || document.documentElement.scrollTop;
+
+      let finalAbsTop; // 最終的に transform に設定するページの絶対Y座標
+
+      // 4. フキダシが画面中央より下か？
+      if (viewportTop > viewportCenterY) {
+          // 【下半分】入力欄を画面中央（の上端）に強制固定
+          // (ページのスクロール量 + 画面中央)
+          finalAbsTop = pageScrollY + viewportCenterY;
+          
+      } else {
+          // 【上半分】フキダシの通常の位置に表示
+          // (フキダシのビューポートY + ページのスクロール量)
+          finalAbsTop = viewportTop + pageScrollY;
+      }
+      
+      // 5. 計算した left と finalAbsTop で配置
+      bubbleEditor.style.transform = `translate(${left}px, ${finalAbsTop}px)`;
+      bubbleEditor.style.left = '0px';
+      bubbleEditor.style.top  = '0px';
+    }
+    // ======[修正ここまで]======
 
 
 

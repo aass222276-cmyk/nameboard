@@ -210,7 +210,12 @@ body, html {
     transform: translate(0, 0);
     will-change: transform;
     touch-action: none; /* IME中のフリック誤作動も軽減 */
-    text-orientation: upright; /* 1字ずつ正立（カーソルの通り道が素直になる） */
+    
+    /* ======[修正箇所 (style.css)]====== */
+    /* text-orientation: upright; */ /* <-- [修正] この行を削除またはコメントアウト */
+    text-orientation: mixed;      /* <-- [修正] 'mixed' に変更 (カーソルバグ対策) */
+    /* ======[修正ここまで]====== */
+    
     letter-spacing: 0;         /* カーソルのズレ抑制。任意で微調整可 */
     caret-color: #000;
 
