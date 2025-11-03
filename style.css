@@ -80,6 +80,15 @@ body, html {
     line-height: 1.1;  
 }
 
+/* ======[修正箇所 (ページボタンの幅を広げる)]====== */
+#toolbar #btnPageDelete,
+#toolbar #btnPageAddBefore,
+#toolbar #btnPageAddAfter {
+    min-width: 38px; /* 30px から少し広げる */
+}
+/* ======[修正ここまで]====== */
+
+
 #toolbar .separator {
     width: 1px;
     height: 48px; 
@@ -95,33 +104,11 @@ body, html {
     margin-right: 4px;
 }
 
-/* フォントスライダー（例外） */
-#sliderFontSize {
-    width: 60px; 
-    flex-shrink: 0;
-    height: auto; 
-}
-/* [v15] px表示部（div） */
-#fontSizeValueDisplay {
-    background: #666;
-    border: 1px solid #888;
-    color: white;
-    padding: 4px 2px;
-    border-radius: 4px;
-    font-weight: bold;
-    flex-shrink: 0;
-    white-space: normal;
-    line-height: 1.25;
-    font-size: 0.8rem;
-    height: calc(var(--toolbar-height) - 16px);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    min-width: 28px;
-}
+/* ======[修正箇所 (ツールバーからスライダーのスタイルを削除)]====== */
+/* #sliderFontSize { ... } */
+/* #fontSizeValueDisplay { ... } */
+/* ======[修正ここまで]====== */
+
 
 /* [v15修正] 新しいリセットボタンのスタイル */
 #btnReset, #btnResetPage, #btnResetPanels, #btnResetBubbles {
@@ -130,6 +117,58 @@ body, html {
 #btnReset:hover, #btnResetPage:hover, #btnResetPanels:hover, #btnResetBubbles:hover {
     background: #c00;
 }
+
+
+/* ======[修正箇所 (フォントスライダーパネルのスタイルを新設)]====== */
+#fontSliderPanel {
+    display: none; /* JSで .show をつけるまで非表示 */
+    position: fixed;
+    top: var(--toolbar-height); /* ツールバーの真下 */
+    left: 0;
+    right: 0;
+    background-color: #3a3a3a; /* ツールバーより少し暗い色 */
+    padding: 8px 10px;
+    z-index: 99; /* ツールバーの直下 */
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    height: 40px; /* 高さを固定 */
+    box-sizing: border-box;
+}
+#fontSliderPanel.show {
+    display: flex; /* .show クラスで表示 */
+}
+
+/* スライダー本体のスタイル (幅を広げる) */
+#fontSliderPanel #sliderFontSize {
+    width: 150px; /* 60px から大幅に広げる */
+    flex-shrink: 0;
+    height: auto; 
+    margin: 0;
+}
+/* px表示部のスタイル (元のスタイルを流用・調整) */
+#fontSliderPanel #fontSizeValueDisplay {
+    background: #666;
+    border: 1px solid #888;
+    color: white;
+    padding: 4px 2px;
+    border-radius: 4px;
+    font-weight: bold;
+    flex-shrink: 0;
+    white-space: normal;
+    line-height: 1.2;
+    font-size: 0.8rem;
+    height: calc(100% - 8px); /* パネルの高さに合わせる */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-width: 28px;
+    cursor: pointer; /* クリック可能であることを示す */
+}
+/* ======[修正ここまで]====== */
 
 
 /* --- [v15] キャンバス領域 --- */
@@ -211,10 +250,7 @@ body, html {
     will-change: transform;
     touch-action: none; /* IME中のフリック誤作動も軽減 */
     
-    /* ======[修正箇所 (style.css)]====== */
-    /* text-orientation: upright; */ /* <-- [修正] この行を削除またはコメントアウト */
-    text-orientation: mixed;      /* <-- [修正] 'mixed' に変更 (カーソルバグ対策) */
-    /* ======[修正ここまで]====== */
+    text-orientation: mixed;      /* [修正済] 'mixed' (カーソルバグ対策) */
     
     letter-spacing: 0;         /* カーソルのズレ抑制。任意で微調整可 */
     caret-color: #000;

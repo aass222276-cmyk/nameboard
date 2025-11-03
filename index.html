@@ -32,20 +32,14 @@
 
     <div id="toolbar">
         
+        <button id="btnPageDelete" title="ページ削除">P<br>削<br>除</button>
         <button id="btnPageAddBefore" title="前にページ追加">↑<br>追<br>加</button>
         <button id="btnPageAddAfter" title="後にページ追加">追<br>加<br>↓</button>
-        <button id="btnPageDelete" title="ページ削除">P<br>削<br>除</button>
-
         <div class="separator"></div>
 
         <button id="btnSerif" class="tool-toggle" title="セリフ (S)">セ<br>リ<br>フ</button>
         <button id="btnKoma" class="tool-toggle" title="コマ枠 (K)">コ<br>マ<br>割</button>
         
-        <div class="separator"></div>
-
-        <input type="range" id="sliderFontSize" min="10" max="48" value="16" title="文字サイズ">
-        <div id="fontSizeValueDisplay">16<br>px</div>
-
         <div class="separator"></div>
 
         <button id="btnCopyText" title="テキストコピー">コ<br>ピ<br>ー</button>
@@ -61,6 +55,10 @@
         <button id="btnReset" title="全リセット">全<br>削<br>除</button>
     </div>
 
+    <div id="fontSliderPanel">
+        <input type="range" id="sliderFontSize" min="10" max="48" value="16" title="文字サイズ">
+        <div id="fontSizeValueDisplay">16<br>px</div>
+    </div>
     <div id="canvasContainer">
         </div>
 

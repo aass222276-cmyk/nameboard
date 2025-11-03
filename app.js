@@ -1,11 +1,10 @@
-// [新規] Canvas描画時に90度回転させる記号リスト (グローバルに追加)
+// [修正済] Canvas描画時に90度回転させる記号リスト
 const ROTATE_CHARS = new Set([
     // 半角
     '(', ')', '-', '=', '?', '!',
     // 全角
     '「', '」', '（', '）', 'ー', '？', '！', 
     '【', '】', '～', '＝', '＆', '。', '、', '…'
-    // ※ '!?' は '!' と '?' の2文字として処理されます
 ]);
 
 
@@ -23,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const BUBBLE_LINE_HEIGHT = 1.2; 
     const SNAP_ANGLE_THRESHOLD = 15; 
     const KOMA_TAP_THRESHOLD = 3; 
-    // const KOMA_HIT_THRESHOLD = 30; // [v15] v13(No.116)のロジックには不要
+    // ======[修正箇所 (12文字折り返し)]======
+    const CHARS_PER_COLUMN = 12; // 12文字で自動折り返し
+    // ======[修正ここまで]======
+
 
     // --- DOM要素 ---
     const canvasContainer = document.getElementById('canvasContainer');
@@ -31,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnKoma = document.getElementById('btnKoma');
     const sliderFontSize = document.getElementById('sliderFontSize');
     const fontSizeValueDisplay = document.getElementById('fontSizeValueDisplay'); 
+    // ======[修正箇所 (フォントパネル)]======
+    const fontSliderPanel = document.getElementById('fontSliderPanel'); // 新しいパネル
+    // ======[修正ここまで]======
     const btnPageAddBefore = document.getElementById('btnPageAddBefore');
     const btnPageAddAfter = document.getElementById('btnPageAddAfter');
     const btnPageDelete = document.getElementById('btnPageDelete');
@@ -298,6 +303,7 @@ function endAutoScrollLock(){
     }
 
     // --- UI更新 ---
+    // ======[修正箇所 (updateUI)]======
     function updateUI() {
         // ツールバーのボタン状態
         btnSerif.classList.toggle('active', state.currentTool === 'serif');
@@ -324,9 +330,16 @@ function endAutoScrollLock(){
         const selectedBubble = getSelectedBubble();
         selectionPanelBubble.classList.toggle('show', !!selectedBubble);
         
+        // [新規] フォントスライダーパネルの表示制御
+        // 「セリフ」ツールがON、または「通常」モードでフキダシ選択中の場合に表示
+        const showFontSlider = (state.currentTool === 'serif') || (state.currentTool === null && !!selectedBubble);
+        fontSliderPanel.classList.toggle('show', showFontSlider);
+
         if (!selectedBubble) hideBubbleEditor();
         updatePageIndicator(); 
     }
+    // ======[修正ここまで]======
+
 
     function updatePageIndicator() {
         if (pageIndicator) {
@@ -444,7 +457,7 @@ function endAutoScrollLock(){
     }
 
     // ======[修正箇所 (drawSingleBubble)]======
-    // [修正] drawSingleBubble に「記号回転ロジック」を追加
+    // [修正] drawSingleBubble に「記号回転」+「12文字折り返し」ロジックを追加
     function drawSingleBubble(bubble, context) {
         const { x, y, w, h, shape, text, font } = bubble;
         context.save();
@@ -472,51 +485,51 @@ function endAutoScrollLock(){
         context.font = `${font}px 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif`;
         context.textAlign = 'center'; 
         
-        // --- [修正] 描画基準を 'top' から 'middle' に変更 ---
-        // これにより、回転の中心計算が容易になります
+        // [修正済] 描画基準を 'middle' に変更
         context.textBaseline = 'middle';
-        // --- [修正ここまで] ---
 
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
         const charHeight = font * BUBBLE_LINE_HEIGHT;  
         
-        // [新規] 枠無用の余白を適用
         const paddingX = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_X;
         const paddingY = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_Y;
 
         let currentX = -paddingX - (columnWidth / 2);
         
-        // --- [修正] 'middle' 基準にしたため、startY (Yの開始位置) も調整 ---
-        // (paddingY) だったものを (paddingY + 半文字分の高さ) にします
+        // [修正済] 'middle' 基準にしたため、startY (Yの開始位置) も調整
         const startY = paddingY + (charHeight * 0.9) / 2;
-        // --- [修正ここまで] ---
 
         lines.forEach((line) => {
             let currentY = startY;
             for (let i = 0; i < line.length; i++) {
                 const char = line[i];
 
-                // --- [修正] ここからが回転ロジックです ---
+                // --- [新規] 12文字折り返し判定 ---
+                // i>0 (最初の文字ではない) かつ i が12の倍数の時
+                if (i > 0 && i % CHARS_PER_COLUMN === 0) {
+                    currentY = startY;   // Y座標をリセット
+                    currentX -= columnWidth; // X座標を次の列に移動
+                }
+                // --- [新規ここまで] ---
+
+
+                // --- [修正済] 回転ロジック ---
                 if (ROTATE_CHARS.has(char)) {
-                    // (1) 描画状態を一時保存
                     context.save();
-                    // (2) 描画中心 (currentX, currentY) に移動
                     context.translate(currentX, currentY);
-                    // (3) 90度 (PI/2ラジアン) 回転
                     context.rotate(Math.PI / 2);
-                    // (4) 回転した中心 (0, 0) に文字を描画
                     context.fillText(char, 0, 0); 
-                    // (5) 描画状態を元に戻す (回転と位置をリセット)
                     context.restore();
                 } else {
                     // 通常の文字 (回転させない)
                     context.fillText(char, currentX, currentY);
                 }
-                // --- [修正ここまで] ---
+                // --- [修正済ここまで] ---
 
                 currentY += charHeight * 0.9; 
             }
+            // 1行 (改行) が終わったら、必ず次の列に移動
             currentX -= columnWidth; 
         });
         context.restore();
@@ -542,7 +555,7 @@ function endAutoScrollLock(){
         btnSerif.addEventListener('click', () => setTool('serif'));
         btnKoma.addEventListener('click', () => setTool('koma'));
         sliderFontSize.addEventListener('input', handleSliderChange); // [v15]
-        fontSizeValueDisplay.addEventListener('click', onChangeFontSizeByInput); // [v15新設]
+        fontSizeValueDisplay.addEventListener('click', onChangeFontSizeByInput); // [v15新設] (機能維持)
         btnPageAddBefore.addEventListener('click', () => addPage(true));
         btnPageAddAfter.addEventListener('click', () => addPage(false));
         btnPageDelete.addEventListener('click', deletePage);
@@ -1004,6 +1017,7 @@ function onPointerMove(e) {
     }
 
     // ======[修正箇所 (showBubbleEditor)]======
+    // [修正済] カーソルを末尾に移動するロジック
     function showBubbleEditor(bubble) {
         hideBubbleEditor(); 
         state.selectedBubbleId = bubble.id;
@@ -1017,9 +1031,9 @@ function onPointerMove(e) {
         updateBubbleEditorPosition(bubble);
         bubbleEditor.focus();
         if (bubble.text) {
-            // bubbleEditor.select(); // <-- [修正] この行を削除またはコメントアウト
+            // bubbleEditor.select(); // <-- [修正済] この行を削除
             
-            // [修正] この行を追加 (カーソルを末尾に移動)
+            // [修正済] この行を追加 (カーソルを末尾に移動)
             bubbleEditor.setSelectionRange(bubble.text.length, bubble.text.length); 
         }
         updateUI();
@@ -1028,10 +1042,10 @@ function onPointerMove(e) {
     // ======[修正ここまで]======
     
     // ======[修正箇所 (updateBubbleEditorPosition)]======
+    // [修正済] Y座標を画面中央に固定するロジック
     function updateBubbleEditorPosition(bubble) {
       const canvas = pageElements[state.currentPageIndex].canvas;
       const r = canvas.getBoundingClientRect();
-      // const scrollY = canvasContainer.scrollTop; // <-- [修正] この行を削除
 
       const w = bubble.w; // 物理の横幅（列の合計）
       const h = bubble.h; // 物理の縦幅（1列の長さ）
@@ -1041,32 +1055,20 @@ function onPointerMove(e) {
 
       const left = r.left + bubble.x - w;   // 右上アンカー (X座標)
 
-      // --- [修正] Y座標の計算ロジックをすべて変更 ---
-
-      // 1. フキダシの「画面（ビューポート）上」でのY座標を計算
+      // --- [修正済] Y座標の計算ロジック ---
       const viewportTop = r.top + bubble.y;
-      
-      // 2. 画面（ビューポート）の中央Y座標
       const viewportCenterY = window.innerHeight / 2;
-      
-      // 3. ページ全体のスクロール量を取得
       const pageScrollY = window.scrollY || document.documentElement.scrollTop;
+      let finalAbsTop; 
 
-      let finalAbsTop; // 最終的に transform に設定するページの絶対Y座標
-
-      // 4. フキダシが画面中央より下か？
       if (viewportTop > viewportCenterY) {
           // 【下半分】入力欄を画面中央（の上端）に強制固定
-          // (ページのスクロール量 + 画面中央)
           finalAbsTop = pageScrollY + viewportCenterY;
-          
       } else {
           // 【上半分】フキダシの通常の位置に表示
-          // (フキダシのビューポートY + ページのスクロール量)
           finalAbsTop = viewportTop + pageScrollY;
       }
       
-      // 5. 計算した left と finalAbsTop で配置
       bubbleEditor.style.transform = `translate(${left}px, ${finalAbsTop}px)`;
       bubbleEditor.style.left = '0px';
       bubbleEditor.style.top  = '0px';
@@ -1105,29 +1107,52 @@ function onBubbleEditorInput(e) {
     
     function onBubbleEditorKeyDown(e) { /* Escはグローバルで処理 */ }
 
-    // [修正] 縦書き用のサイズ測定に「枠無」処理を追加
+    // ======[修正箇所 (measureBubbleSize)]======
+    // [修正] 12文字折り返しを考慮したサイズ測定
     function measureBubbleSize(bubble) {
-        const { text, font, shape } = bubble; // [新規] shape を取得
+        const { text, font, shape } = bubble; 
         const lines = text.split('\n');
         const columnWidth = font * BUBBLE_LINE_HEIGHT; 
         const charHeight = font * BUBBLE_LINE_HEIGHT * 0.9; 
         
-        // [新規] 枠無用の余白を適用
         const paddingX = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_X;
         const paddingY = (shape === 'none') ? BUBBLE_PADDING_NONE : BUBBLE_PADDING_Y;
 
+        let totalColumns = 0;
         let maxHeight = 0;
+
         lines.forEach(line => {
-            const height = line.length * charHeight;
-            if (height > maxHeight) maxHeight = height;
+            if (line.length === 0) {
+                totalColumns++; // 空の行も1列としてカウント
+                if (font > maxHeight) maxHeight = font; // 少なくとも1文字分の高さ
+            } else {
+                // この行が何列必要か計算 (例: 13文字なら 13/12 の切り上げで 2列)
+                const colsForThisLine = Math.ceil(line.length / CHARS_PER_COLUMN);
+                totalColumns += colsForThisLine;
+                
+                let heightForThisLine;
+                if (colsForThisLine > 1) {
+                    // 複数列にまたがる場合、高さは最大の「12文字分」
+                    heightForThisLine = CHARS_PER_COLUMN * charHeight;
+                } else {
+                    // 1列に収まる場合、その文字数分の高さ
+                    heightForThisLine = line.length * charHeight;
+                }
+                
+                if (heightForThisLine > maxHeight) maxHeight = heightForThisLine;
+            }
         });
-        if (maxHeight === 0) { 
-             maxHeight = font;
+
+        if (lines.length === 0 || text.length === 0) {
+             maxHeight = font; // テキストが何もない場合は、1文字分の高さを確保
         }
-        const totalWidth = lines.length * columnWidth;
+
+        const totalWidth = totalColumns * columnWidth;
         bubble.w = totalWidth + paddingX * 2;
         bubble.h = maxHeight + paddingY * 2;
     }
+    // ======[修正ここまで]======
+
 
     function getSelectedBubble(page = getCurrentPage()) {
         if (!page || !state.selectedBubbleId) return null;
